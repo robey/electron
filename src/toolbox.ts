@@ -33,7 +33,10 @@ export class Toolbox {
       this.dragOffsetY = event.clientY - this.toolbox.offsetTop;
     });
 
+    // allow the toolbox itself, and the cursor, to be a drag target.
     this.toolbox.addEventListener("dragover", event => this.dragover(event));
+    board.cursor.addEventListener("dragover", event => this.dragover(event));
+    board.cursor.addEventListener("drop", event => this.drop(event));
 
     board.canvasElement.addEventListener("dragenter", event => this.dragenter(event));
     board.canvasElement.addEventListener("dragover", event => this.dragover(event));
@@ -67,13 +70,15 @@ export class Toolbox {
 
   dragover(event: DragEvent) {
     if (!this.dragElement) return;
-    event.preventDefault();
+
+    // move toolbox around directly.
     if (this.dragElement == this.toolbox) {
       const toolbox = document.getElementById("toolbox") as HTMLElement;
       toolbox.style.right = "unset";
       toolbox.style.bottom = "unset";
       toolbox.style.left = `${event.clientX - this.dragOffsetX}px`;
       toolbox.style.top = `${event.clientY - this.dragOffsetY}px`;
+      event.preventDefault();
       return;
     }
 
@@ -81,8 +86,9 @@ export class Toolbox {
     [ this.dragX, this.dragY ] = this.board.pixelToTile(event.clientX, event.clientY);
     if (this.board.cursorX != oldX || this.board.cursorY != oldY) {
       if (oldX != null && oldY != null) this.board.drawTile(oldX, oldY);
-      this.board.drawCursorAt(this.dragX, this.dragY);
+      this.board.positionCursor(this.dragX, this.dragY);
     }
+    event.preventDefault();
   }
 
   drop(event: DragEvent) {
