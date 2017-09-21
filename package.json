@@ -20,6 +20,7 @@
   "devDependencies": {
     "@types/mocha": "^2.2.42",
     "@types/should": "^11.2.0",
+    "http-server": "^0.10.0",
     "mocha": "^3.5.0",
     "should": "^11.2.1",
     "source-map-support": "^0.4.16",
@@ -32,6 +33,7 @@
     "clean": "rm -rf lib site/netgraph.js",
     "distclean": "npm run clean && rm -rf node_modules npm-debug.log",
     "prepublish": "npm run build",
+    "start": "npm run build && http-server site/ -p 8023 --cors",
     "test": "tsc && mocha -R spec --colors --recursive lib/test",
     "webpack": "webpack --display-error-details"
   }
