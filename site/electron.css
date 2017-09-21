@@ -1,0 +1,76 @@
+body {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+}
+
+#board {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  background-color: #fff;
+  flex: 1 1 auto;
+}
+
+#cursor {
+  position: absolute;
+  z-index: 1;
+  animation: 1.5s cursor-blink;
+  animation-timing-function: steps(3);
+  animation-iteration-count: infinite;
+  /*animation:  */
+}
+
+@keyframes cursor-blink {
+  from {
+    opacity: 1.0;
+  }
+
+  34% {
+    opacity: 1.0;
+  }
+
+  67% {
+    opacity: 0.3;
+  }
+}
+
+.tile {
+
+}
+
+.hidden-images {
+  position: fixed;
+  z-index: -10;
+  opacity: 0;
+}
+
+#toolbox {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  z-index: 1;
+  top: 1em;
+  right: 1em;
+  border: 3px solid #bbf;
+  border-radius: 0.5em;
+  background-color: #eef;
+  padding: 2px;
+}
+
+.grippy {
+  width: 100%;
+  cursor: move;
+}
+
+.grippy-line {
+  height: 2px;
+  background-color: #bbf;
+  margin-top: 2px;
+}
+
+#toolbox .tile {
+  padding: 0.5em;
+}

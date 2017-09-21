@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+  <head>
+    <title> electron </title>
+    <link rel="stylesheet" type="text/css" href="electron.css">
+    <script src="electron.js"></script>
+  </head>
+  <body>
+    <canvas id="board">
+    </canvas>
+
+    <img id="cursor" class="tile" src="tiles/cursor.png">
+
+    <div class="hidden-images">
+      <img id="tile-wire-h" src="tiles/wire-h.png" class="tile">
+      <img id="tile-wire-corner" src="tiles/wire-corner.png" class="tile">
+    </div>
+
+    <div id="toolbox">
+      <div class="grippy" draggable="true">
+        <div class="grippy-line"></div>
+        <div class="grippy-line"></div>
+        <div class="grippy-line"></div>
+      </div>
+      <img id="toolbox-wire-h" src="tiles/wire-h.png" class="tile" draggable="true">
+      <img id="toolbox-wire-corner" src="tiles/wire-corner.png" class="tile" draggable="true">
+    </div>
+  </body>
+</html>

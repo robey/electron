@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es6",
+    "strict": true,
+    "sourceMap": true,
+    "noImplicitReturns": true,
+    "rootDir": "src/",
+    "outDir": "lib/",
+    "declaration": false
+  }
+}
