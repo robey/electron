@@ -6,14 +6,14 @@ const CHUNK_SIZE = 50;
  * a square chunk of the board, holding all the tiles for an N x N region.
  */
 class Chunk {
-  grid: Tile[];
+  grid: Array<Tile | undefined>;
   north: Chunk | undefined;
   east: Chunk | undefined;
   south: Chunk | undefined;
   west: Chunk | undefined;
 
   constructor(public size: number, public xOffset: number, public yOffset: number) {
-    this.grid = new Array<Tile>(size * size);
+    this.grid = new Array<Tile | undefined>(size * size);
   }
 }
 
@@ -65,7 +65,7 @@ export class TileGrid {
     return chunk.grid[(y - chunk.yOffset) * chunk.size + (x - chunk.xOffset)];
   }
 
-  setAt(x: number, y: number, tile: Tile) {
+  setAt(x: number, y: number, tile: Tile | undefined) {
     const chunk = this.chunkFor(x, y) || this.makeChunkFor(x, y);
     chunk.grid[(y - chunk.yOffset) * chunk.size + (x - chunk.xOffset)] = tile;
   }

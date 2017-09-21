@@ -63,7 +63,8 @@ export class Board {
     this.tileGrid.setAt(4, 1, new TileCorner());
     this.tileGrid.setAt(4, 2, new TileWire());
 
-    document.addEventListener("keyup", event => this.keypress(event));
+    // support for "keypress" appears to have been silently removed from chrome.
+    document.addEventListener("keydown", event => this.keypress(event));
     document.addEventListener("click", event => this.click(event));
     document.addEventListener("dblclick", event => this.doubleClick(event));
 
@@ -82,31 +83,27 @@ export class Board {
     this.yOffset = (height - this.viewHeight * this.tileSize) / 2;
 
     this.redraw();
-    this.positionCursor();
   }
 
   redraw() {
     this.canvas.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
 
-    for (let y = this.viewTop; y < this.viewTop + this.viewHeight; y++) {
-      for (let x = this.viewLeft; x < this.viewLeft + this.viewWidth; x++) {
+    // overlap by 1 on each side, to make it bleed the margins.
+    for (let y = this.viewTop - 1; y <= this.viewTop + this.viewHeight; y++) {
+      for (let x = this.viewLeft - 1; x <= this.viewLeft + this.viewWidth; x++) {
         this.drawTile(x, y);
       }
     }
+    this.positionCursor();
   }
 
-  drawTile(x: number, y: number) {
+  drawTile(x?: number, y?: number) {
+    if (x === undefined) x = this.cursorX;
+    if (y === undefined) y = this.cursorY;
     const [ xPixel, yPixel ] = this.tileToPixel(x, y);
     this.canvas.clearRect(xPixel, yPixel, this.tileSize, this.tileSize);
     const tile = this.tileGrid.getAt(x, y);
     if (tile) tile.draw(this.canvas, xPixel, yPixel, this.tileSize);
-  }
-
-  // used by drag & drop
-  drawCursorAt(x: number, y: number) {
-    this.cursor.style.visibility = "hidden";
-    const [ xPixel, yPixel ] = this.tileToPixel(x, y);
-    this.canvas.drawImage(this.cursor, xPixel, yPixel, this.tileSize, this.tileSize);
   }
 
   positionCursor(x?: number, y?: number) {
@@ -119,56 +116,80 @@ export class Board {
   }
 
   keypress(event: KeyboardEvent) {
+    event.preventDefault();
     console.log(event);
     switch (event.key) {
       case "ArrowUp":
         this.cursorY--;
+        this.positionCursor();
+        if (event.ctrlKey || this.cursorY < this.viewTop) {
+          this.viewTop--;
+          this.redraw();
+        }
         break;
       case "ArrowDown":
         this.cursorY++;
+        this.positionCursor();
+        if (event.ctrlKey || this.cursorY >= this.viewTop + this.viewHeight) {
+          this.viewTop++;
+          this.redraw();
+        }
         break;
       case "ArrowLeft":
         this.cursorX--;
+        this.positionCursor();
+        if (event.ctrlKey || this.cursorX < this.viewLeft) {
+          this.viewLeft--;
+          this.redraw();
+        }
         break;
       case "ArrowRight":
         this.cursorX++;
+        this.positionCursor();
+        if (event.ctrlKey || this.cursorX >= this.viewLeft + this.viewWidth) {
+          this.viewLeft++;
+          this.redraw();
+        }
         break;
       case " ":
         this.rotate();
         break;
+      case "Backspace":
+      case "Delete":
+        this.removeTile();
+        break;
     }
 
-    this.positionCursor();
   }
 
 
   // ----- events for mouse people
 
   click(event: MouseEvent) {
-    console.log(event);
-    [ this.cursorX, this.cursorY ] = this.pixelToTile(event.x, event.y);
-    this.positionCursor();
+    console.log("click", event);
+    let [ x, y ] = this.pixelToTile(event.x, event.y);
+    this.positionCursor(x, y);
     event.preventDefault();
   }
 
   doubleClick(event: MouseEvent) {
-    console.log(event);
+    console.log("doubleclick", event);
     // "click" event already moved the cursor.
     this.rotate();
   }
 
 
 
-  // drop(event: DragEvent) {
-  // }
-  //
-
-
   rotate() {
     const tile = this.tileGrid.getAt(this.cursorX, this.cursorY);
     if (!tile) return;
     tile.rotate();
-    this.drawTile(this.cursorX, this.cursorY);
+    this.drawTile();
+  }
+
+  removeTile() {
+    this.tileGrid.setAt(this.cursorX, this.cursorY, undefined);
+    this.drawTile();
   }
 
   tileToPixel(x: number, y: number): [ number, number ] {
