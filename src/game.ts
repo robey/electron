@@ -4,14 +4,10 @@ import { Toolbox } from "./toolbox";
 
 const DEFAULT_TILE_SIZE = 50;
 
-
 window.addEventListener("DOMContentLoaded", async () => {
 });
 
 window.addEventListener("load", async () => {
-  TileWire.load();
-  TileCorner.load();
-
   (document as any).board = new Board();
 });
 
@@ -20,31 +16,27 @@ export class Board {
 
   cursorX = 0;
   cursorY = 0;
+
   viewLeft = -2;
   viewTop = -2;
   viewWidth = 0;
   viewHeight = 0;
+
+  // padding from canvas corner to page
   xOffset = 0;
   yOffset = 0;
 
   tileGrid: TileGrid;
   toolbox: Toolbox;
 
-  canvasElement: HTMLCanvasElement;
-  canvas: CanvasRenderingContext2D;
+  board: HTMLElement;
   cursor: HTMLImageElement;
 
   tileStyle: CSSStyleDeclaration;
 
   constructor() {
-    this.canvasElement = document.getElementById("board") as HTMLCanvasElement;
-    this.canvas = this.canvasElement.getContext("2d") as CanvasRenderingContext2D;
+    this.board = document.getElementById("board") as HTMLElement;
     this.cursor = document.getElementById("cursor") as HTMLImageElement;
-
-    // CSS + canvas bug: a canvas is always "300 x 150" regardless of its
-    // size. fix by telling it how big it is.
-    this.canvasElement.width = this.canvasElement.clientWidth;
-    this.canvasElement.height = this.canvasElement.clientHeight;
 
     const cssRules = ([] as CSSRule[]).concat(...Array.from(document.styleSheets).map(sheet => {
       if (sheet instanceof CSSStyleSheet) return Array.from(sheet.cssRules);
@@ -57,9 +49,7 @@ export class Board {
     this.toolbox = new Toolbox(this);
 
     // FIXME
-    const x1 = new TileWire();
-    x1.rotate();
-    this.tileGrid.setAt(3, 1, x1);
+    this.tileGrid.setAt(3, 1, new TileWire().rotate());
     this.tileGrid.setAt(4, 1, new TileCorner());
     this.tileGrid.setAt(4, 2, new TileWire());
 
@@ -68,15 +58,13 @@ export class Board {
     document.addEventListener("click", event => this.click(event));
     document.addEventListener("dblclick", event => this.doubleClick(event));
 
-
-
     this.resize();
   }
 
   resize() {
     this.tileStyle.width = `${this.tileSize}px`;
-    const width = this.canvasElement.clientWidth;
-    const height = this.canvasElement.clientHeight;
+    const width = this.board.clientWidth;
+    const height = this.board.clientHeight;
     this.viewWidth = Math.floor(width / this.tileSize);
     this.viewHeight = Math.floor(height / this.tileSize);
     this.xOffset = (width - this.viewWidth * this.tileSize) / 2;
@@ -86,7 +74,7 @@ export class Board {
   }
 
   redraw() {
-    this.canvas.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+    while (this.board.firstChild) this.board.removeChild(this.board.firstChild);
 
     // overlap by 1 on each side, to make it bleed the margins.
     for (let y = this.viewTop - 1; y <= this.viewTop + this.viewHeight; y++) {
@@ -101,9 +89,10 @@ export class Board {
     if (x === undefined) x = this.cursorX;
     if (y === undefined) y = this.cursorY;
     const [ xPixel, yPixel ] = this.tileToPixel(x, y);
-    this.canvas.clearRect(xPixel, yPixel, this.tileSize, this.tileSize);
     const tile = this.tileGrid.getAt(x, y);
-    if (tile) tile.draw(this.canvas, xPixel, yPixel, this.tileSize);
+    if (tile) {
+      this.board.appendChild(tile.drawAt(xPixel, yPixel));
+    }
   }
 
   positionCursor(x?: number, y?: number) {
@@ -116,7 +105,6 @@ export class Board {
   }
 
   keypress(event: KeyboardEvent) {
-    event.preventDefault();
     console.log(event);
     switch (event.key) {
       case "ArrowUp":
@@ -126,6 +114,7 @@ export class Board {
           this.viewTop--;
           this.redraw();
         }
+        event.preventDefault();
         break;
       case "ArrowDown":
         this.cursorY++;
@@ -134,6 +123,7 @@ export class Board {
           this.viewTop++;
           this.redraw();
         }
+        event.preventDefault();
         break;
       case "ArrowLeft":
         this.cursorX--;
@@ -142,6 +132,7 @@ export class Board {
           this.viewLeft--;
           this.redraw();
         }
+        event.preventDefault();
         break;
       case "ArrowRight":
         this.cursorX++;
@@ -150,13 +141,16 @@ export class Board {
           this.viewLeft++;
           this.redraw();
         }
+        event.preventDefault();
         break;
       case " ":
         this.rotate();
+        event.preventDefault();
         break;
       case "Backspace":
       case "Delete":
         this.removeTile();
+        event.preventDefault();
         break;
     }
 
@@ -188,8 +182,19 @@ export class Board {
   }
 
   removeTile() {
-    this.tileGrid.setAt(this.cursorX, this.cursorY, undefined);
-    this.drawTile();
+    this.putTile(undefined);
+  }
+
+  putTile(tile: Tile | undefined, x?: number, y?: number) {
+    if (x === undefined) x = this.cursorX;
+    if (y === undefined) y = this.cursorY;
+    const oldTile = this.tileGrid.getAt(x, y);
+    if (oldTile) {
+      const image = oldTile.hide();
+      if (image) this.board.removeChild(image);
+    }
+    this.tileGrid.setAt(x, y, tile);
+    this.drawTile(x, y);
   }
 
   tileToPixel(x: number, y: number): [ number, number ] {
