@@ -1,8 +1,8 @@
-import { Tile, TileCorner, TileWire } from "./tiles";
+import { loadTiles, Tile, TileCorner, TileWire } from "./tiles";
 import { TileGrid } from "./tile_grid";
 import { Toolbox } from "./toolbox";
 
-const DEFAULT_TILE_SIZE = 50;
+const DEFAULT_TILE_SIZE = 40;
 
 window.addEventListener("DOMContentLoaded", async () => {
 });
@@ -34,6 +34,10 @@ export class Board {
 
   tileStyle: CSSStyleDeclaration;
 
+  // drag & drop support
+  dragOnMove: ((event: DragEvent) => void) | null = null;
+  dragOnDrop: ((event: DragEvent) => void) | null = null;
+
   constructor() {
     this.board = document.getElementById("board") as HTMLElement;
     this.cursor = document.getElementById("cursor") as HTMLImageElement;
@@ -45,6 +49,7 @@ export class Board {
 
     this.tileStyle = cssRules.filter(x => x.selectorText == ".tile")[0].style;
 
+    loadTiles((event, tile) => this.dragTile(event, tile), (event, tile) => this.dragEnded());
     this.tileGrid = new TileGrid();
     this.toolbox = new Toolbox(this);
 
@@ -58,11 +63,22 @@ export class Board {
     document.addEventListener("click", event => this.click(event));
     document.addEventListener("dblclick", event => this.doubleClick(event));
 
+    // allow things to be dragged into the game board
+    this.board.addEventListener("dragenter", event => this.dragenter(event));
+    this.board.addEventListener("dragover", event => this.dragover(event));
+    this.board.addEventListener("dragleave", event => this.dragleave(event));
+    this.board.addEventListener("drop", event => this.drop(event));
+
+    // the cursor should be a drag target, since it gets between the dragged item and the board.
+    this.cursor.addEventListener("dragover", event => this.dragover(event));
+    this.cursor.addEventListener("drop", event => this.drop(event));
+
     this.resize();
   }
 
   resize() {
     this.tileStyle.width = `${this.tileSize}px`;
+    this.tileStyle.height = `${this.tileSize}px`;
     const width = this.board.clientWidth;
     const height = this.board.clientHeight;
     this.viewWidth = Math.floor(width / this.tileSize);
@@ -91,7 +107,8 @@ export class Board {
     const [ xPixel, yPixel ] = this.tileToPixel(x, y);
     const tile = this.tileGrid.getAt(x, y);
     if (tile) {
-      this.board.appendChild(tile.drawAt(xPixel, yPixel));
+      const element = tile.drawAt(xPixel, yPixel);
+      this.board.appendChild(element);
     }
   }
 
@@ -153,7 +170,6 @@ export class Board {
         event.preventDefault();
         break;
     }
-
   }
 
 
@@ -173,10 +189,67 @@ export class Board {
   }
 
 
+  // ----- events for drag & drop
+
+  // draggable objects call this on "dragstart" to let us know we should
+  // accept the drag, and tell us how to move/receive it.
+  dragActive(onMove: (event: DragEvent) => void, onDrop: (event: DragEvent) => void) {
+    this.dragOnMove = onMove;
+    this.dragOnDrop = onDrop;
+  }
+
+  dragEnded() {
+    this.dragOnMove = null;
+    this.dragOnDrop = null;
+  }
+
+  dragenter(event: DragEvent) {
+    console.log("dragenter", this.dragOnMove != null, event);
+    if (this.dragOnMove) event.preventDefault();
+  }
+
+  dragleave(event: DragEvent) {
+    console.log("dragleave", event);
+  }
+
+  dragover(event: DragEvent) {
+    if (!this.dragOnMove) return;
+    this.dragOnMove(event);
+    event.preventDefault();
+  }
+
+  drop(event: DragEvent) {
+    console.log("drop", event);
+    if (!this.dragOnDrop) return;
+    this.dragOnDrop(event);
+    this.dragEnded();
+    event.preventDefault();
+  }
+
+  dragTile(event: DragEvent, tile: Tile) {
+    const dragOffsetX = event.clientX - (event.target as HTMLElement).offsetLeft;
+    const dragOffsetY = event.clientY - (event.target as HTMLElement).offsetTop;
+    let [ x, y ] = this.pixelToTile(event.clientX, event.clientY);
+    this.tileGrid.setAt(x, y, undefined);
+
+    this.dragActive(
+      event => {
+        let [ x, y ] = this.pixelToTile(event.clientX, event.clientY);
+        this.positionCursor(x, y);
+        this.board.appendChild(tile.drawAt(event.clientX - dragOffsetX, event.clientY - dragOffsetY));
+      },
+      event => {
+        const [ x, y ] = this.pixelToTile(event.clientX, event.clientY);
+        this.positionCursor(x, y);
+        this.putTile(tile);
+      }
+    );
+  }
 
   rotate() {
     const tile = this.tileGrid.getAt(this.cursorX, this.cursorY);
     if (!tile) return;
+    this.board.removeChild(tile.element);
     tile.rotate();
     this.drawTile();
   }
@@ -189,10 +262,7 @@ export class Board {
     if (x === undefined) x = this.cursorX;
     if (y === undefined) y = this.cursorY;
     const oldTile = this.tileGrid.getAt(x, y);
-    if (oldTile) {
-      const image = oldTile.hide();
-      if (image) this.board.removeChild(image);
-    }
+    if (oldTile) this.board.removeChild(oldTile.element);
     this.tileGrid.setAt(x, y, tile);
     this.drawTile(x, y);
   }

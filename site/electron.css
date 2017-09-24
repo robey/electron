@@ -41,6 +41,10 @@ body {
 
 }
 
+.tile-placed {
+  position: absolute;
+}
+
 .hidden-images {
   position: fixed;
   z-index: -10;
