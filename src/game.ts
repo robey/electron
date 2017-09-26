@@ -78,6 +78,21 @@ export class Board {
     this.cursor.addEventListener("dragover", event => this.dragover(event));
     this.cursor.addEventListener("drop", event => this.drop(event));
 
+    // hide the cursor when the mouse is over it, so drag will work. :(
+    this.cursor.addEventListener("mouseover", event => {
+      this.hideCursor();
+      const checkLeave = (event: MouseEvent) => {
+        const [ x, y ] = this.pixelToTile(event.clientX, event.clientY);
+        if (x == this.cursorX && y == this.cursorY) return;
+        // show cursor again.
+        this.positionCursor();
+        this.board.removeEventListener("mouseover", checkLeave);
+        this.board.removeEventListener("mousemove", checkLeave);
+      };
+      this.board.addEventListener("mouseover", checkLeave);
+      this.board.addEventListener("mousemove", checkLeave);
+    });
+
     this.resize();
 
     const robey1 = async () => {
@@ -138,6 +153,10 @@ export class Board {
       const element = tile.drawAt(xPixel, yPixel);
       this.board.appendChild(element);
     }
+  }
+
+  hideCursor() {
+    this.cursor.style.visibility = "hidden";
   }
 
   positionCursor(x?: number, y?: number) {
