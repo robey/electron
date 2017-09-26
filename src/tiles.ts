@@ -121,6 +121,7 @@ export class TileCorner implements Tile {
 
 function cloneTile(element: HTMLElement, tile: Tile): HTMLElement {
   const rv = element.cloneNode(true) as HTMLElement;
+  rv.removeAttribute("id");
   rv.classList.add("tile");
   rv.classList.add("tile-placed");
   rv.addEventListener("dragstart", event => globalDragStartHandler(event, tile));
@@ -133,7 +134,6 @@ function rotateImage(original: HTMLImageElement, rotation: number): HTMLImageEle
   const canvas = document.createElement("canvas");
 	canvas.width = original.width;
 	canvas.height = original.height;
-  console.log(canvas);
 	const context = canvas.getContext("2d") as CanvasRenderingContext2D;
 
   const center = original.width / 2;
@@ -146,6 +146,5 @@ function rotateImage(original: HTMLImageElement, rotation: number): HTMLImageEle
   const image = new Image(original.width, original.height);
   image.src = canvas.toDataURL("image/png");
   image.classList.add("tile");
-  console.log(image);
   return image;
 }

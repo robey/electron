@@ -1,3 +1,4 @@
+import { Electron } from "./electron";
 import { loadTiles, Tile, TileCorner, TileWire } from "./tiles";
 import { TileGrid } from "./tile_grid";
 import { Toolbox } from "./toolbox";
@@ -28,6 +29,7 @@ export class Board {
 
   tileGrid: TileGrid;
   toolbox: Toolbox;
+  electrons: Electron[] = [];
 
   board: HTMLElement;
   cursor: HTMLImageElement;
@@ -50,13 +52,16 @@ export class Board {
     this.tileStyle = cssRules.filter(x => x.selectorText == ".tile")[0].style;
 
     loadTiles((event, tile) => this.dragTile(event, tile), (event, tile) => this.dragEnded());
+    Electron.load();
+
     this.tileGrid = new TileGrid();
     this.toolbox = new Toolbox(this);
 
     // FIXME
-    this.tileGrid.setAt(3, 1, new TileWire().rotate());
+    this.tileGrid.setAt(3, 1, new TileWire());
     this.tileGrid.setAt(4, 1, new TileCorner());
-    this.tileGrid.setAt(4, 2, new TileWire());
+    this.tileGrid.setAt(4, 2, new TileWire().rotate());
+    this.electrons.push(new Electron(3, 1));
 
     // support for "keypress" appears to have been silently removed from chrome.
     document.addEventListener("keydown", event => this.keypress(event));
@@ -74,6 +79,24 @@ export class Board {
     this.cursor.addEventListener("drop", event => this.drop(event));
 
     this.resize();
+
+    const robey1 = async () => {
+      await this.electrons[0].setPulsing(false);
+      await this.electrons[0].pushTo(40, 0, 1000);
+      this.electrons[0].draw(240 + this.xOffset, 120 + this.yOffset);
+      await this.electrons[0].setPulsing(true);
+      setTimeout(() => robey2(), 2000);
+    };
+
+    const robey2 = async () => {
+      await this.electrons[0].setPulsing(false);
+      await this.electrons[0].pushTo(-40, 0, 1000);
+      this.electrons[0].draw(200 + this.xOffset, 120 + this.yOffset);
+      await this.electrons[0].setPulsing(true);
+      setTimeout(() => robey1(), 2000);
+    };
+
+    setTimeout(() => robey1(), 2000);
   }
 
   resize() {
@@ -98,6 +121,11 @@ export class Board {
         this.drawTile(x, y);
       }
     }
+
+    this.electrons.forEach(e => {
+      const [ xPixel, yPixel ] = this.tileToPixel(e.x, e.y);
+      this.board.appendChild(e.draw(xPixel, yPixel));
+    });
     this.positionCursor();
   }
 

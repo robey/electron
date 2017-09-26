@@ -24,7 +24,7 @@ body {
 }
 
 @keyframes cursor-blink {
-  from {
+  0% {
     opacity: 1.0;
   }
 
@@ -78,4 +78,31 @@ body {
 #toolbox .tile {
   padding: 0.5em;
   z-index: 2;
+}
+
+
+/* electron animations */
+
+.electron {
+  z-index: 1;
+}
+
+.electron-pulsing {
+  animation: 3s pulse-anim;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes pulse-anim {
+  0% {
+    transform: scale(1.0);
+  }
+
+  50% {
+    transform: scale(0.8);
+  }
+
+  100% {
+    transform: scale(1.0);
+  }
 }
