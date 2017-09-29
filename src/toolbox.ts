@@ -6,19 +6,9 @@ const TOOLBOX_TILES: { [id: string]: { new(): Tile } } = {
   "toolbox-wire-corner": TileCorner
 };
 
-enum DragType {
-  NONE,
-  TOOLBOX,
-  TILE
-}
-
 export class Toolbox {
   toolbox: HTMLElement;
   grippy: HTMLElement;
-
-  // what is being dragged around?
-  dragType = DragType.NONE;
-  dragTile: Tile | null = null;
 
   // when dragging the grippy thing around, what's the pointer offset?
   dragOffsetX: number = 0;
