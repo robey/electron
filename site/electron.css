@@ -16,6 +16,7 @@ body {
 
 #cursor {
   position: absolute;
+  pointer-events: none;  /* makes it transparent to drag events */
   z-index: 1;
   animation: 1.5s cursor-blink;
   animation-timing-function: steps(3);

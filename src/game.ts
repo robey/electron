@@ -74,25 +74,6 @@ export class Board {
     this.board.addEventListener("dragleave", event => this.dragleave(event));
     this.board.addEventListener("drop", event => this.drop(event));
 
-    // the cursor should be a drag target, since it gets between the dragged item and the board.
-    this.cursor.addEventListener("dragover", event => this.dragover(event));
-    this.cursor.addEventListener("drop", event => this.drop(event));
-
-    // hide the cursor when the mouse is over it, so drag will work. :(
-    this.cursor.addEventListener("mouseover", event => {
-      this.hideCursor();
-      const checkLeave = (event: MouseEvent) => {
-        const [ x, y ] = this.pixelToTile(event.clientX, event.clientY);
-        if (x == this.cursorX && y == this.cursorY) return;
-        // show cursor again.
-        this.positionCursor();
-        this.board.removeEventListener("mouseover", checkLeave);
-        this.board.removeEventListener("mousemove", checkLeave);
-      };
-      this.board.addEventListener("mouseover", checkLeave);
-      this.board.addEventListener("mousemove", checkLeave);
-    });
-
     this.resize();
 
     const robey1 = async () => {
