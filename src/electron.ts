@@ -1,4 +1,4 @@
-import { once } from "./events";
+import { once, nextFrame } from "./events";
 import { Orientation } from "./tiles";
 
 export class Electron {
@@ -31,7 +31,7 @@ export class Electron {
     if (pulsing) {
       this.element.classList.add("electron-pulsing");
     } else {
-      await waitForAnimationToEnd(this.element);
+      await once(this.element, "animationiteration", () => null);
       this.element.classList.remove("electron-pulsing");
       // looks like chrome (at least) requires two frames to recover from removing an animation.
       await nextFrame();
@@ -56,19 +56,4 @@ export class Electron {
       this.element.style.transform = null;
     });
   }
-}
-
-function nextFrame(): Promise<void> {
-  return new Promise((resolve, reject) => requestAnimationFrame(() => resolve()));
-}
-
-function waitForAnimationToEnd(element: HTMLElement): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const f = () => {
-      element.removeEventListener("animationiteration", f);
-      resolve();
-    };
-
-    element.addEventListener("animationiteration", f);
-  });
 }

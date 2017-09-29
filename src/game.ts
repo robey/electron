@@ -1,4 +1,5 @@
 import { Electron } from "./electron";
+import { nextFrame } from "./events";
 import { loadTiles, Tile, TileCorner, TileWire } from "./tiles";
 import { TileGrid } from "./tile_grid";
 import { Toolbox } from "./toolbox";
@@ -88,7 +89,8 @@ export class Board {
       await this.electrons[0].setPulsing(false);
       await this.electrons[0].pushTo(-40, 0, 1000);
       this.electrons[0].draw(200 + this.xOffset, 120 + this.yOffset);
-      await this.electrons[0].setPulsing(true);
+      await nextFrame();
+      await nextFrame();
       await this.electrons[0].vanish(2000);
     };
 

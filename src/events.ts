@@ -1,5 +1,4 @@
 // some browsers don't support "once" yet.
-
 export function once(element: Element, name: string, f: EventListener): Promise<void> {
   return new Promise((resolve, reject) => {
     const wrapper: EventListener = (event: Event) => {
@@ -13,4 +12,9 @@ export function once(element: Element, name: string, f: EventListener): Promise<
     };
     element.addEventListener(name, wrapper);
   });
+}
+
+// usage: await nextFrame();
+export function nextFrame(): Promise<void> {
+  return new Promise((resolve, reject) => requestAnimationFrame(() => resolve()));
 }
