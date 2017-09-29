@@ -89,7 +89,7 @@ export class Board {
       await this.electrons[0].pushTo(-40, 0, 1000);
       this.electrons[0].draw(200 + this.xOffset, 120 + this.yOffset);
       await this.electrons[0].setPulsing(true);
-      setTimeout(() => robey1(), 2000);
+      await this.electrons[0].vanish(2000);
     };
 
     setTimeout(() => robey1(), 2000);
