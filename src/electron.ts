@@ -1,3 +1,5 @@
+import { once } from "./events";
+import { Orientation } from "./tiles";
 
 export class Electron {
   static baseElement: HTMLElement;
@@ -7,6 +9,7 @@ export class Electron {
   }
 
   element: HTMLElement;
+  orientation: Orientation = Orientation.EAST;
 
   constructor(public x: number, public y: number) {
     this.element = Electron.baseElement.cloneNode(true) as HTMLElement;
@@ -30,30 +33,21 @@ export class Electron {
     } else {
       await waitForAnimationToEnd(this.element);
       this.element.classList.remove("electron-pulsing");
+      // looks like chrome (at least) requires two frames to recover from removing an animation.
+      await nextFrame();
+      await nextFrame();
     }
-    await nextFrame();
   }
 
   pushTo(x: number, y: number, speed: number): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      try {
-        const f = (event: TransitionEvent) => {
-          this.element.removeEventListener("transitionend", f);
-          this.element.style.transition = null;
-          this.element.style.transform = null;
-          resolve();
-        };
-
-        setTimeout(() => {
-          this.element.style.transition = `transform ${speed / 1000}s`;
-          this.element.style.transform = `translate(${x}px, ${y}px)`;
-          console.log(`translate(${x}, ${y})`);
-          console.log(this.element.style.transform);
-        }, 16);
-        this.element.addEventListener("transitionend", f);
-      } catch (error) {
-        console.log(error);
-      }
+      this.element.style.transition = `transform ${speed / 1000}s`;
+      this.element.style.transform = `translate(${x}px, ${y}px)`;
+      once(this.element, "transitionend", (event: TransitionEvent) => {
+        this.element.style.transition = null;
+        this.element.style.transform = null;
+        resolve();
+      });
     });
   }
 }

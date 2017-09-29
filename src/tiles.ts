@@ -1,5 +1,5 @@
 
-enum Orientation {
+export enum Orientation {
   NORTH, EAST, SOUTH, WEST
 }
 
