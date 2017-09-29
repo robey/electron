@@ -86,6 +86,7 @@ body {
 
 .electron {
   z-index: 1;
+  pointer-events: none;
 }
 
 .electron-pulsing {
