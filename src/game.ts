@@ -1,7 +1,7 @@
 import { Electron } from "./electron";
 import { nextFrame } from "./events";
 import { ActionType, Orientation, Tile } from "./models";
-import { loadTiles, TileCorner, TileWire } from "./tiles";
+import { loadTiles, TileWire, TileWireCorner } from "./tiles";
 import { TileGrid } from "./tile_grid";
 import { Toolbox } from "./toolbox";
 
@@ -63,7 +63,7 @@ export class Board {
 
     // FIXME
     this.tileGrid.setAt(3, 1, new TileWire());
-    this.tileGrid.setAt(4, 1, new TileCorner());
+    this.tileGrid.setAt(4, 1, new TileWireCorner());
     this.tileGrid.setAt(4, 2, new TileWire().rotate());
     this.electrons.push(new Electron(3, 1));
 

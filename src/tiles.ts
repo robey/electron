@@ -14,7 +14,9 @@ export function loadTiles(
   dragEndHandler: (event: DragEvent, tile: Tile) => void,
 ) {
   TileWire.load();
-  TileCorner.load();
+  TileWireOneWay.load();
+  TileWireCorner.load();
+  TileWireCross.load();
   globalDragStartHandler = dragStartHandler;
   globalDragEndHandler = dragEndHandler;
 }
@@ -58,16 +60,51 @@ export class TileWire implements Tile {
   }
 }
 
-export class TileCorner implements Tile {
+export class TileWireOneWay implements Tile {
+  static elements: { [orientation: number]: HTMLImageElement };
+
+  orientation = Orientation.EAST;
+  element: HTMLElement = cloneTile(TileWireOneWay.elements[this.orientation], this);
+
+  static load() {
+    const image = document.getElementById("tile-wire-oneway") as HTMLImageElement;
+    TileWireOneWay.elements = {
+      [Orientation.NORTH]: rotateImage(image, -Math.PI / 2),
+      [Orientation.EAST]: rotateImage(image, 0),
+      [Orientation.SOUTH]: rotateImage(image, Math.PI / 2),
+      [Orientation.WEST]: rotateImage(image, Math.PI),
+    };
+  }
+
+  drawAt(x: number, y: number): HTMLElement {
+    const element = this.element;
+    element.style.left = `${x}px`;
+    element.style.top = `${y}px`;
+    return element;
+  }
+
+  rotate(): Tile {
+    this.orientation = NEXT_CLOCKWISE[this.orientation];
+    this.element = cloneTile(TileWireOneWay.elements[this.orientation], this);
+    return this;
+  }
+
+  action(orientation: Orientation): Action {
+    if (this.orientation == orientation) return Action.move(orientation);
+    return Action.die;
+  }
+}
+
+export class TileWireCorner implements Tile {
   static elements: { [orientation: number]: HTMLImageElement };
 
   // south-to-west
   orientation = Orientation.SOUTH;
-  element: HTMLElement = cloneTile(TileCorner.elements[this.orientation], this);
+  element: HTMLElement = cloneTile(TileWireCorner.elements[this.orientation], this);
 
   static load() {
     const image = document.getElementById("tile-wire-corner") as HTMLImageElement;
-    TileCorner.elements = {
+    TileWireCorner.elements = {
       [Orientation.NORTH]: rotateImage(image, Math.PI),
       [Orientation.EAST]: rotateImage(image, -Math.PI / 2),
       [Orientation.SOUTH]: rotateImage(image, 0),
@@ -84,7 +121,7 @@ export class TileCorner implements Tile {
 
   rotate(): Tile {
     this.orientation = NEXT_CLOCKWISE[this.orientation];
-    this.element = cloneTile(TileCorner.elements[this.orientation], this);
+    this.element = cloneTile(TileWireCorner.elements[this.orientation], this);
     return this;
   }
 
@@ -93,6 +130,32 @@ export class TileCorner implements Tile {
     if (orientation == OPPOSITE[this.orientation]) return Action.move(NEXT_MATHWISE[orientation]);
     if (orientation == NEXT_MATHWISE[this.orientation]) return Action.move(this.orientation);
     return Action.die;
+  }
+}
+
+export class TileWireCross implements Tile {
+  static image: HTMLImageElement;
+
+  orientation = Orientation.EAST;
+  element: HTMLElement = cloneTile(TileWireCross.image, this);
+
+  static load() {
+    TileWireCross.image = document.getElementById("tile-wire-cross") as HTMLImageElement;
+  }
+
+  drawAt(x: number, y: number): HTMLElement {
+    const element = this.element;
+    element.style.left = `${x}px`;
+    element.style.top = `${y}px`;
+    return element;
+  }
+
+  rotate(): Tile {
+    return this;
+  }
+
+  action(orientation: Orientation): Action {
+    return Action.move(orientation);
   }
 }
 
