@@ -14,7 +14,16 @@ export function once(element: Element, name: string, f: EventListener): Promise<
   });
 }
 
+const FRAME_MSEC = 1000 / 60;
+
 // usage: await nextFrame();
 export function nextFrame(): Promise<void> {
-  return new Promise((resolve, reject) => requestAnimationFrame(() => resolve()));
+  return new Promise(resolve => waitUntil(Date.now() + FRAME_MSEC, resolve));
+}
+
+// requestAnimationFrame is unreliable. :( it often waits only a msec or two.
+export function waitUntil(target: number, resolve: () => void) {
+  const now = Date.now();
+  if (now >= target) return resolve();
+  setTimeout(() => waitUntil(target, resolve), target - now);
 }

@@ -1,6 +1,7 @@
 import { Electron } from "./electron";
 import { nextFrame } from "./events";
-import { loadTiles, Tile, TileCorner, TileWire } from "./tiles";
+import { ActionType, Orientation, Tile } from "./models";
+import { loadTiles, TileCorner, TileWire } from "./tiles";
 import { TileGrid } from "./tile_grid";
 import { Toolbox } from "./toolbox";
 
@@ -28,6 +29,8 @@ export class Board {
   xOffset = 0;
   yOffset = 0;
 
+  running = false;
+  speed = 500;
   tileGrid: TileGrid;
   toolbox: Toolbox;
   electrons: Electron[] = [];
@@ -76,25 +79,92 @@ export class Board {
     this.board.addEventListener("drop", event => this.drop(event));
 
     this.resize();
+  }
 
-    const robey1 = async () => {
-      await this.electrons[0].setPulsing(false);
-      await this.electrons[0].pushTo(40, 0, 1000);
-      this.electrons[0].draw(240 + this.xOffset, 120 + this.yOffset);
-      await this.electrons[0].setPulsing(true);
-      setTimeout(() => robey2(), 2000);
-    };
+  start() {
+    console.log("start!");
+    if (this.running) return this.stop();
+    this.running = true;
+    setTimeout(() => this.play(), 10);
+  }
 
-    const robey2 = async () => {
-      await this.electrons[0].setPulsing(false);
-      await this.electrons[0].pushTo(-40, 0, 1000);
-      this.electrons[0].draw(200 + this.xOffset, 120 + this.yOffset);
-      await nextFrame();
-      await nextFrame();
-      await this.electrons[0].vanish(2000);
-    };
+  play() {
+    try {
+      if (!this.running) return;
+      if (this.electrons.length == 0) {
+        this.stop();
+        return;
+      }
+      this.tick(this.speed).then(() => this.play());
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
-    setTimeout(() => robey1(), 2000);
+  stop() {
+    console.log("stop!");
+    this.running = false;
+    if (this.electrons.length == 0) {
+      this.electrons.push(new Electron(3, 1));
+      this.drawElectron(this.electrons[0]);
+    }
+  }
+
+  async tick(speed: number): Promise<void> {
+    console.log("tick:", Date.now(), this.electrons.map(e => e.toString()).join(", "));
+    this.electrons.filter(e => !e.alive).map(e => {
+      if (this.board == e.element.parentNode) this.board.removeChild(e.element);
+    });
+    this.electrons = this.electrons.filter(e => e.alive);
+
+    await Promise.all(this.electrons.map(async e => {
+      const tile = this.tileGrid.getAt(e.x, e.y);
+      if (!tile) return this.removeElectron(e, speed);
+
+      const action = tile.action(e.orientation);
+      switch (action.type) {
+        case ActionType.DIE:
+          return this.removeElectron(e, speed);
+        case ActionType.MOVE:
+          return this.moveElectron(e, action.orientation, speed);
+      }
+    }));
+
+    await nextFrame();
+  }
+
+  async removeElectron(electron: Electron, speed: number): Promise<void> {
+    electron.alive = false;
+    await electron.vanish(speed);
+    this.board.removeChild(electron.element);
+  }
+
+  async moveElectron(electron: Electron, orientation: Orientation, speed: number): Promise<void> {
+    electron.orientation = orientation;
+    switch (orientation) {
+      case Orientation.NORTH:
+        electron.y--;
+        await electron.pushTo(0, -this.tileSize, speed);
+        break;
+      case Orientation.EAST:
+        electron.x++;
+        await electron.pushTo(this.tileSize, 0, speed);
+        break;
+      case Orientation.SOUTH:
+        electron.y++;
+        await electron.pushTo(0, this.tileSize, speed);
+        break;
+      case Orientation.WEST:
+        electron.x--;
+        await electron.pushTo(-this.tileSize, 0, speed);
+        break;
+    }
+    this.drawElectron(electron);
+  }
+
+  async drawElectron(electron: Electron): Promise<void> {
+    const [ xPixel, yPixel ] = this.tileToPixel(electron.x, electron.y);
+    this.board.appendChild(electron.draw(xPixel, yPixel));
   }
 
   resize() {
@@ -120,10 +190,7 @@ export class Board {
       }
     }
 
-    this.electrons.forEach(e => {
-      const [ xPixel, yPixel ] = this.tileToPixel(e.x, e.y);
-      this.board.appendChild(e.draw(xPixel, yPixel));
-    });
+    this.electrons.forEach(e => this.drawElectron(e));
     this.positionCursor();
   }
 
@@ -198,6 +265,9 @@ export class Board {
       case "Delete":
         this.removeTile();
         event.preventDefault();
+        break;
+      case "Enter":
+        this.start();
         break;
     }
   }

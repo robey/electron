@@ -1,41 +1,4 @@
-
-export enum Orientation {
-  NORTH, EAST, SOUTH, WEST
-}
-
-// for each orientation, how many degrees clockwise from north?
-const NORTH_DEGREES = {
-  [Orientation.NORTH]: 0,
-  [Orientation.EAST]: 90,
-  [Orientation.SOUTH]: 180,
-  [Orientation.WEST]: 270,
-};
-
-// for each orientation, next clockwise direction?
-const NEXT_CLOCKWISE = {
-  [Orientation.NORTH]: Orientation.EAST,
-  [Orientation.EAST]: Orientation.SOUTH,
-  [Orientation.SOUTH]: Orientation.WEST,
-  [Orientation.WEST]: Orientation.NORTH,
-};
-
-// flip orientation, if only north and east are valid:
-const FLIP = {
-  [Orientation.NORTH]: Orientation.EAST,
-  [Orientation.EAST]: Orientation.NORTH,
-};
-
-export interface Tile {
-  // change to the next orientation (by user request).
-  // this implicitly invalidates the 'element'.
-  rotate(): Tile;
-
-  // set the position and transform of your tile image and return it.
-  drawAt(x: number, y: number): HTMLElement;
-
-  // the current HTML element to draw.
-  element: HTMLElement;
-}
+import { Action, FLIP, NEXT_CLOCKWISE, NEXT_MATHWISE, OPPOSITE, Orientation, Tile } from "./models";
 
 // total HACK
 let globalDragStartHandler: (event: DragEvent, tile: Tile) => void;
@@ -83,6 +46,16 @@ export class TileWire implements Tile {
     this.element = cloneTile(TileWire.elements[this.orientation], this);
     return this;
   }
+
+  action(orientation: Orientation): Action {
+    if (this.orientation == Orientation.NORTH) {
+      return (orientation == Orientation.NORTH || orientation == Orientation.SOUTH) ?
+        Action.move(orientation) : Action.die;
+    } else {
+      return (orientation == Orientation.EAST || orientation == Orientation.WEST) ?
+        Action.move(orientation) : Action.die;
+    }
+  }
 }
 
 export class TileCorner implements Tile {
@@ -113,6 +86,13 @@ export class TileCorner implements Tile {
     this.orientation = NEXT_CLOCKWISE[this.orientation];
     this.element = cloneTile(TileCorner.elements[this.orientation], this);
     return this;
+  }
+
+  action(orientation: Orientation): Action {
+    console.log(orientation, this.orientation);
+    if (orientation == OPPOSITE[this.orientation]) return Action.move(NEXT_MATHWISE[orientation]);
+    if (orientation == NEXT_MATHWISE[this.orientation]) return Action.move(this.orientation);
+    return Action.die;
   }
 }
 

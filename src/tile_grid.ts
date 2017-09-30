@@ -1,4 +1,4 @@
-import { Tile } from "./tiles";
+import { Tile } from "./models";
 
 const CHUNK_SIZE = 50;
 

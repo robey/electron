@@ -1,5 +1,6 @@
 import { Board } from "./game";
-import { Tile, TileCorner, TileWire } from "./tiles";
+import { Tile } from "./models";
+import { TileCorner, TileWire } from "./tiles";
 
 const TOOLBOX_TILES: { [id: string]: { new(): Tile } } = {
   "toolbox-wire-h": TileWire,

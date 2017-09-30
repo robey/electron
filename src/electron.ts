@@ -1,5 +1,5 @@
 import { once, nextFrame } from "./events";
-import { Orientation } from "./tiles";
+import { Orientation, ORIENTATION_NAME } from "./models";
 
 export class Electron {
   static baseElement: HTMLElement;
@@ -10,11 +10,17 @@ export class Electron {
 
   element: HTMLElement;
   orientation: Orientation = Orientation.EAST;
+  alive = true;
 
   constructor(public x: number, public y: number) {
     this.element = Electron.baseElement.cloneNode(true) as HTMLElement;
     this.element.removeAttribute("id");
-    this.element.classList.add("tile", "tile-placed", "electron-pulsing");
+    this.element.classList.add("tile", "tile-placed");
+  }
+
+  toString(): string {
+    const alive = this.alive ? "alive" : "DEAD";
+    return `Electron(${alive}, (${this.x}, ${this.y}), ${ORIENTATION_NAME[this.orientation]})`;
   }
 
   draw(x: number, y: number): HTMLElement {
@@ -33,14 +39,12 @@ export class Electron {
     } else {
       await once(this.element, "animationiteration", () => null);
       this.element.classList.remove("electron-pulsing");
-      // looks like chrome (at least) requires two frames to recover from removing an animation.
-      await nextFrame();
       await nextFrame();
     }
   }
 
   async pushTo(x: number, y: number, speed: number): Promise<void> {
-    this.element.style.transition = `transform ${speed / 1000}s`;
+    this.element.style.transition = `transform ${speed / 1000}s linear`;
     this.element.style.transform = `translate(${x}px, ${y}px)`;
     await once(this.element, "transitionend", (event: TransitionEvent) => {
       this.element.style.transition = null;
