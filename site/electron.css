@@ -91,6 +91,43 @@ body {
   background-color: white;
 }
 
+#playbar {
+  display: flex;
+  flex-direction: row;
+}
+
+.button {
+  cursor: pointer;
+}
+
+#speedbar, #playbar {
+  display: flex;
+  flex-direction: row;
+  margin-top: 5px;
+  margin-left: 10px;
+  margin-right: 10px;
+  font-size: 12pt;
+  align-items: center;
+}
+
+#speedbar button, #playbar button {
+  border: none;
+  outline: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12pt;
+}
+
+#display-speed {
+  flex-grow: 1;
+  text-align: center;
+  font-style: italic;
+}
+
+#button-play {
+  /*margin-left: 10px;*/
+}
+
 
 /* electron animations */
 

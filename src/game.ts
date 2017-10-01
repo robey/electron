@@ -35,8 +35,12 @@ export class Board {
   toolbox: Toolbox;
   electrons: Electron[] = [];
 
-  board: HTMLElement;
+  div: HTMLElement;
   cursor: HTMLImageElement;
+  speedDisplay: HTMLElement;
+  buttonSlower: HTMLElement;
+  buttonFaster: HTMLElement;
+  buttonPlay: HTMLElement;
 
   tileStyle: CSSStyleDeclaration;
 
@@ -45,8 +49,12 @@ export class Board {
   dragOnDrop: ((event: DragEvent) => void) | null = null;
 
   constructor() {
-    this.board = document.getElementById("board") as HTMLElement;
+    this.div = document.getElementById("board") as HTMLElement;
     this.cursor = document.getElementById("cursor") as HTMLImageElement;
+    this.speedDisplay = document.getElementById("display-speed") as HTMLElement;
+    this.buttonSlower = document.getElementById("button-slower") as HTMLElement;
+    this.buttonFaster = document.getElementById("button-faster") as HTMLElement;
+    this.buttonPlay = document.getElementById("button-play") as HTMLElement;
 
     const cssRules = ([] as CSSRule[]).concat(...Array.from(document.styleSheets).map(sheet => {
       if (sheet instanceof CSSStyleSheet) return Array.from(sheet.cssRules);
@@ -60,12 +68,14 @@ export class Board {
 
     this.tileGrid = new TileGrid();
     this.toolbox = new Toolbox(this);
+    this.setSpeed(this.speed);
 
     // FIXME
     this.tileGrid.setAt(3, 1, new TileWire());
     this.tileGrid.setAt(4, 1, new TileWireCorner());
     this.tileGrid.setAt(4, 2, new TileWire().rotate());
     this.electrons.push(new Electron(3, 1));
+    (document.getElementById("display-speed") as HTMLElement).textContent = "2Hz";
 
     // support for "keypress" appears to have been silently removed from chrome.
     document.addEventListener("keydown", event => this.keypress(event));
@@ -73,12 +83,32 @@ export class Board {
     document.addEventListener("dblclick", event => this.doubleClick(event));
 
     // allow things to be dragged into the game board
-    this.board.addEventListener("dragenter", event => this.dragenter(event));
-    this.board.addEventListener("dragover", event => this.dragover(event));
-    this.board.addEventListener("dragleave", event => this.dragleave(event));
-    this.board.addEventListener("drop", event => this.drop(event));
+    this.div.addEventListener("dragenter", event => this.dragenter(event));
+    this.div.addEventListener("dragover", event => this.dragover(event));
+    this.div.addEventListener("dragleave", event => this.dragleave(event));
+    this.div.addEventListener("drop", event => this.drop(event));
+
+    // buttons
+    this.buttonFaster.addEventListener("click", event => {
+      this.faster();
+      event.preventDefault();
+    });
+    this.buttonSlower.addEventListener("click", event => {
+      this.slower();
+      event.preventDefault();
+    });
+    this.buttonPlay.addEventListener("click", event => {
+      this.play();
+      event.preventDefault();
+    });
 
     this.resize();
+  }
+
+  setSpeed(speed: number) {
+    this.speed = speed;
+    const hz = Math.round(1000 / speed);
+    this.speedDisplay.textContent = `${hz}Hz`;
   }
 
   start() {
@@ -110,10 +140,18 @@ export class Board {
     }
   }
 
+  faster() {
+    if (this.speed > 33) this.setSpeed(this.speed / 2);
+  }
+
+  slower() {
+    if (this.speed < 1000) this.setSpeed(this.speed * 2);
+  }
+
   async tick(speed: number): Promise<void> {
     console.log("tick:", Date.now(), this.electrons.map(e => e.toString()).join(", "));
     this.electrons.filter(e => !e.alive).map(e => {
-      if (this.board == e.element.parentNode) this.board.removeChild(e.element);
+      if (this.div == e.element.parentNode) this.div.removeChild(e.element);
     });
     this.electrons = this.electrons.filter(e => e.alive);
 
@@ -136,7 +174,7 @@ export class Board {
   async removeElectron(electron: Electron, speed: number): Promise<void> {
     electron.alive = false;
     await electron.vanish(speed);
-    this.board.removeChild(electron.element);
+    this.div.removeChild(electron.element);
   }
 
   async moveElectron(electron: Electron, orientation: Orientation, speed: number): Promise<void> {
@@ -164,14 +202,14 @@ export class Board {
 
   async drawElectron(electron: Electron): Promise<void> {
     const [ xPixel, yPixel ] = this.tileToPixel(electron.x, electron.y);
-    this.board.appendChild(electron.draw(xPixel, yPixel));
+    this.div.appendChild(electron.draw(xPixel, yPixel));
   }
 
   resize() {
     this.tileStyle.width = `${this.tileSize}px`;
     this.tileStyle.height = `${this.tileSize}px`;
-    const width = this.board.clientWidth;
-    const height = this.board.clientHeight;
+    const width = this.div.clientWidth;
+    const height = this.div.clientHeight;
     this.viewWidth = Math.floor(width / this.tileSize);
     this.viewHeight = Math.floor(height / this.tileSize);
     this.xOffset = (width - this.viewWidth * this.tileSize) / 2;
@@ -181,7 +219,7 @@ export class Board {
   }
 
   redraw() {
-    while (this.board.firstChild) this.board.removeChild(this.board.firstChild);
+    while (this.div.firstChild) this.div.removeChild(this.div.firstChild);
 
     // overlap by 1 on each side, to make it bleed the margins.
     for (let y = this.viewTop - 1; y <= this.viewTop + this.viewHeight; y++) {
@@ -201,7 +239,7 @@ export class Board {
     const tile = this.tileGrid.getAt(x, y);
     if (tile) {
       const element = tile.drawAt(xPixel, yPixel);
-      this.board.appendChild(element);
+      this.div.appendChild(element);
     }
   }
 
@@ -336,7 +374,7 @@ export class Board {
       event => {
         let [ x, y ] = this.pixelToTile(event.clientX, event.clientY);
         this.positionCursor(x, y);
-        this.board.appendChild(tile.drawAt(event.clientX - dragOffsetX, event.clientY - dragOffsetY));
+        this.div.appendChild(tile.drawAt(event.clientX - dragOffsetX, event.clientY - dragOffsetY));
       },
       event => {
         const [ x, y ] = this.pixelToTile(event.clientX, event.clientY);
@@ -349,7 +387,7 @@ export class Board {
   rotate() {
     const tile = this.tileGrid.getAt(this.cursorX, this.cursorY);
     if (!tile) return;
-    this.board.removeChild(tile.element);
+    this.div.removeChild(tile.element);
     tile.rotate();
     this.drawTile();
   }
@@ -362,7 +400,7 @@ export class Board {
     if (x === undefined) x = this.cursorX;
     if (y === undefined) y = this.cursorY;
     const oldTile = this.tileGrid.getAt(x, y);
-    if (oldTile) this.board.removeChild(oldTile.element);
+    if (oldTile) this.div.removeChild(oldTile.element);
     this.tileGrid.setAt(x, y, tile);
     this.drawTile(x, y);
   }
