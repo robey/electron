@@ -1,7 +1,7 @@
 module.exports = {
   entry: [ "./src/game.ts" ],
   output: {
-    path: __dirname + "/site",
+    path: __dirname + "/dist/js",
     filename: "electron.js",
     library: "electron"
   },

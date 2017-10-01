@@ -29,11 +29,11 @@
     "webpack": "^3.5.5"
   },
   "scripts": {
-    "build": "npm run webpack",
-    "clean": "rm -rf lib site/netgraph.js",
+    "build": "mkdir -p dist/js/ && cp -a public/* dist && npm run webpack",
+    "clean": "rm -rf dist",
     "distclean": "npm run clean && rm -rf node_modules npm-debug.log",
     "prepublish": "npm run build",
-    "start": "npm run build && http-server site/ -p 8023 --cors",
+    "start": "npm run build && http-server dist/ -p 8023 --cors",
     "test": "tsc && mocha -R spec --colors --recursive lib/test",
     "webpack": "webpack --display-error-details"
   }

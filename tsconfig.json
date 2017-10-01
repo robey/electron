@@ -6,7 +6,7 @@
     "sourceMap": true,
     "noImplicitReturns": true,
     "rootDir": "src/",
-    "outDir": "lib/",
+    "outDir": "dist/js/",
     "declaration": false
   }
 }
