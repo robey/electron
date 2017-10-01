@@ -98,7 +98,7 @@ export class Board {
       event.preventDefault();
     });
     this.buttonPlay.addEventListener("click", event => {
-      this.play();
+      this.start();
       event.preventDefault();
     });
 
@@ -115,6 +115,7 @@ export class Board {
     console.log("start!");
     if (this.running) return this.stop();
     this.running = true;
+    this.hideCursor();
     setTimeout(() => this.play(), 10);
   }
 
@@ -134,6 +135,7 @@ export class Board {
   stop() {
     console.log("stop!");
     this.running = false;
+    this.positionCursor();
     if (this.electrons.length == 0) {
       this.electrons.push(new Electron(3, 1));
       this.drawElectron(this.electrons[0]);
@@ -182,19 +184,19 @@ export class Board {
     switch (orientation) {
       case Orientation.NORTH:
         electron.y--;
-        await electron.pushTo(0, -this.tileSize, speed);
+        if (speed > 50) await electron.pushTo(0, -this.tileSize, speed);
         break;
       case Orientation.EAST:
         electron.x++;
-        await electron.pushTo(this.tileSize, 0, speed);
+        if (speed > 50) await electron.pushTo(this.tileSize, 0, speed);
         break;
       case Orientation.SOUTH:
         electron.y++;
-        await electron.pushTo(0, this.tileSize, speed);
+        if (speed > 50) await electron.pushTo(0, this.tileSize, speed);
         break;
       case Orientation.WEST:
         electron.x--;
-        await electron.pushTo(-this.tileSize, 0, speed);
+        if (speed > 50) await electron.pushTo(-this.tileSize, 0, speed);
         break;
     }
     this.drawElectron(electron);
@@ -293,6 +295,14 @@ export class Board {
           this.viewLeft++;
           this.redraw();
         }
+        event.preventDefault();
+        break;
+      case "+":
+        this.faster();
+        event.preventDefault();
+        break;
+      case "-":
+        this.slower();
         event.preventDefault();
         break;
       case " ":
