@@ -79,9 +79,6 @@ export interface Tile {
   // this implicitly invalidates 'element'.
   rotate(): Tile;
 
-  // set the position and transform of your tile image and return it.
-  drawAt(x: number, y: number): HTMLElement;
-
   // what should happen if an electron enters?
   action(orientation: Orientation): Action;
 

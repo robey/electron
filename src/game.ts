@@ -1,17 +1,21 @@
 import { Electron } from "./electron";
 import { nextFrame } from "./events";
 import { ActionType, Orientation, Tile } from "./models";
-import { loadTiles, TileWire, TileWireCorner } from "./tiles";
+import { loadTiles, moveTile, setTileDragEvents, TileWire, TileWireCorner } from "./tiles";
 import { TileGrid } from "./tile_grid";
 import { Toolbox } from "./toolbox";
 
 const DEFAULT_TILE_SIZE = 40;
 
+let board: Board;
+
 window.addEventListener("DOMContentLoaded", async () => {
+  board = new Board();
+  (document as any).board = board;
 });
 
 window.addEventListener("load", async () => {
-  (document as any).board = new Board();
+  await board.load();
 });
 
 export class Board {
@@ -62,8 +66,11 @@ export class Board {
     })) as CSSStyleRule[];
 
     this.tileStyle = cssRules.filter(x => x.selectorText == ".tile")[0].style;
+  }
 
-    loadTiles((event, tile) => this.dragTile(event, tile), (event, tile) => this.dragEnded());
+  async load(): Promise<void> {
+    setTileDragEvents((event, tile) => this.dragTile(event, tile), (event, tile) => this.dragEnded());
+    await loadTiles();
     Electron.load();
 
     this.tileGrid = new TileGrid();
@@ -240,8 +247,7 @@ export class Board {
     const [ xPixel, yPixel ] = this.tileToPixel(x, y);
     const tile = this.tileGrid.getAt(x, y);
     if (tile) {
-      const element = tile.drawAt(xPixel, yPixel);
-      this.div.appendChild(element);
+      this.div.appendChild(moveTile(tile, xPixel, yPixel));
     }
   }
 
@@ -384,7 +390,7 @@ export class Board {
       event => {
         let [ x, y ] = this.pixelToTile(event.clientX, event.clientY);
         this.positionCursor(x, y);
-        this.div.appendChild(tile.drawAt(event.clientX - dragOffsetX, event.clientY - dragOffsetY));
+        this.div.appendChild(moveTile(tile, event.clientX - dragOffsetX, event.clientY - dragOffsetY));
       },
       event => {
         const [ x, y ] = this.pixelToTile(event.clientX, event.clientY);
