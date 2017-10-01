@@ -126,7 +126,6 @@ export class TileWireCorner implements Tile {
   }
 
   action(orientation: Orientation): Action {
-    console.log(orientation, this.orientation);
     if (orientation == OPPOSITE[this.orientation]) return Action.move(NEXT_MATHWISE[orientation]);
     if (orientation == NEXT_MATHWISE[this.orientation]) return Action.move(this.orientation);
     return Action.die;
