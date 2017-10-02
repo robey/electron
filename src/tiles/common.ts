@@ -22,7 +22,6 @@ export class TileResources {
   }
 
   getClone(orientation: number, tile: Tile) {
-    console.log(this);
     const rv = this.images[orientation].cloneNode(true) as HTMLElement;
     rv.removeAttribute("id");
     rv.classList.add("tile");
@@ -36,9 +35,6 @@ export class TileResources {
   async buildRotations(originalOrientation: Orientation, count: number, ...ids: string[]): Promise<void> {
     const originals = ids.map(id => document.getElementById(id) as HTMLImageElement);
     const image = await stackImages(originals);
-    if (!(document as any).foo) (document as any).foo = [];
-    (document as any).foo.push(image);
-    (document as any).foo.push(rotateImage(image, 0));
     this.images[originalOrientation] = rotateImage(image, 0);
     if (count > 1) {
       this.images[NEXT_CLOCKWISE[originalOrientation]] = rotateImage(image, Math.PI / 2);
@@ -80,7 +76,6 @@ function rotateImage(original: HTMLImageElement, rotation: number): HTMLImageEle
 (document as any).rotateImage = rotateImage;
 
 async function stackImages(images: HTMLImageElement[]): Promise<HTMLImageElement> {
-  console.log(images);
   const canvas = document.createElement("canvas");
   canvas.width = images[0].width;
   canvas.height = images[0].height;
