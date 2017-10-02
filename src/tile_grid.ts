@@ -2,15 +2,15 @@ import { Tile } from "./models";
 
 const CHUNK_SIZE = 50;
 
+function offsets(x: number, y: number): [ number, number ] {
+  return [ Math.floor(x / CHUNK_SIZE) * CHUNK_SIZE, Math.floor(y / CHUNK_SIZE) * CHUNK_SIZE ];
+}
+
 /*
  * a square chunk of the board, holding all the tiles for an N x N region.
  */
 class Chunk {
   grid: Array<Tile | undefined>;
-  north: Chunk | undefined;
-  east: Chunk | undefined;
-  south: Chunk | undefined;
-  west: Chunk | undefined;
 
   constructor(public size: number, public xOffset: number, public yOffset: number) {
     this.grid = new Array<Tile | undefined>(size * size);
@@ -18,44 +18,18 @@ class Chunk {
 }
 
 export class TileGrid {
-  origin = new Chunk(CHUNK_SIZE, 0, 0);
+  // keys are "xoffset,yoffset"
+  map: { [coord: string]: Chunk } = {};
 
   chunkFor(x: number, y: number): Chunk | undefined {
-    let chunk: Chunk | undefined = this.origin;
-    while (chunk && x < chunk.xOffset) chunk = chunk.west;
-    while (chunk && x >= chunk.xOffset + chunk.size) chunk = chunk.east;
-    while (chunk && y < chunk.yOffset) chunk = chunk.north;
-    while (chunk && y >= chunk.yOffset + chunk.size) chunk = chunk.south;
-    return chunk;
+    const [ xOffset, yOffset ] = offsets(x, y);
+    return this.map[`${xOffset},${yOffset}`];
   }
 
   makeChunkFor(x: number, y: number): Chunk {
-    const xOffset = Math.floor(x / CHUNK_SIZE) * CHUNK_SIZE;
-    const yOffset = Math.floor(y / CHUNK_SIZE) * CHUNK_SIZE;
+    const [ xOffset, yOffset ] = offsets(x, y);
     const chunk = new Chunk(CHUNK_SIZE, xOffset, yOffset);
-
-    // build cross-links
-    const north = this.chunkFor(xOffset, yOffset - CHUNK_SIZE);
-    if (north) {
-      north.south = chunk;
-      chunk.north = north;
-    }
-    const east = this.chunkFor(xOffset + CHUNK_SIZE, yOffset);
-    if (east) {
-      east.west = chunk;
-      chunk.east = east;
-    }
-    const south = this.chunkFor(xOffset, yOffset + CHUNK_SIZE);
-    if (south) {
-      south.north = chunk;
-      chunk.south = south;
-    }
-    const west = this.chunkFor(xOffset - CHUNK_SIZE, yOffset);
-    if (west) {
-      west.east = chunk;
-      chunk.west = west;
-    }
-
+    this.map[`${xOffset},${yOffset}`] = chunk;
     return chunk;
   }
 
@@ -68,5 +42,26 @@ export class TileGrid {
   setAt(x: number, y: number, tile: Tile | undefined) {
     const chunk = this.chunkFor(x, y) || this.makeChunkFor(x, y);
     chunk.grid[(y - chunk.yOffset) * chunk.size + (x - chunk.xOffset)] = tile;
+    if (tile) {
+      tile.x = x;
+      tile.y = y;
+    }
+  }
+
+  sortedChunks(): Chunk[] {
+    // keys are all "x,y"
+    return Object.keys(this.map).map(key => this.map[key]).sort((a, b) => {
+      if (a.yOffset != b.yOffset) return a.yOffset - b.yOffset;
+      return a.xOffset - b.xOffset;
+    });
+  }
+
+  *tiles(): Iterator<Tile> {
+    for (const chunk of Object.keys(this.map).map(key => this.map[key])) {
+      for (let i = 0; i < chunk.size * chunk.size; i++) {
+        const tile = chunk.grid[i];
+        if (tile) yield tile;
+      }
+    }
   }
 }
