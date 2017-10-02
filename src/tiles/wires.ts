@@ -1,19 +1,21 @@
 import { Action, FLIP, NEXT_CLOCKWISE, NEXT_MATHWISE, OPPOSITE, Orientation, Tile } from "../models";
 import { TileResources } from "./common";
 
-export class TileWire implements Tile {
+export class Wire implements Tile {
   static resources = new TileResources();
 
   orientation = Orientation.EAST;
-  element: HTMLElement = TileWire.resources.getClone(this.orientation, this);
+  element: HTMLElement = Wire.resources.getClone(this.orientation, this);
+  x = 0;
+  y = 0;
 
   static async load(): Promise<void> {
-    await TileWire.resources.buildRotations(Orientation.EAST, 4, "tile-wire-h");
+    await Wire.resources.buildRotations(Orientation.EAST, 4, "tile-wire-h");
   }
 
   rotate(): Tile {
     this.orientation = FLIP[this.orientation];
-    this.element = TileWire.resources.getClone(this.orientation, this);
+    this.element = Wire.resources.getClone(this.orientation, this);
     return this;
   }
 
@@ -29,19 +31,21 @@ export class TileWire implements Tile {
 }
 
 
-export class TileWireOneWay implements Tile {
+export class WireOneWay implements Tile {
   static resources = new TileResources();
 
   orientation = Orientation.EAST;
-  element: HTMLElement = TileWireOneWay.resources.getClone(this.orientation, this);
+  element: HTMLElement = WireOneWay.resources.getClone(this.orientation, this);
+  x = 0;
+  y = 0;
 
   static async load(): Promise<void> {
-    await TileWireOneWay.resources.buildRotations(Orientation.EAST, 4, "tile-wire-oneway");
+    await WireOneWay.resources.buildRotations(Orientation.EAST, 4, "tile-wire-oneway");
   }
 
   rotate(): Tile {
     this.orientation = NEXT_CLOCKWISE[this.orientation];
-    this.element = TileWireOneWay.resources.getClone(this.orientation, this);
+    this.element = WireOneWay.resources.getClone(this.orientation, this);
     return this;
   }
 
@@ -52,20 +56,22 @@ export class TileWireOneWay implements Tile {
 }
 
 
-export class TileWireCorner implements Tile {
+export class WireCorner implements Tile {
   static resources = new TileResources();
 
   // south-to-west
   orientation = Orientation.SOUTH;
-  element: HTMLElement = TileWireCorner.resources.getClone(this.orientation, this);
+  element: HTMLElement = WireCorner.resources.getClone(this.orientation, this);
+  x = 0;
+  y = 0;
 
   static async load(): Promise<void> {
-    await TileWireCorner.resources.buildRotations(Orientation.SOUTH, 4, "tile-wire-corner");
+    await WireCorner.resources.buildRotations(Orientation.SOUTH, 4, "tile-wire-corner");
   }
 
   rotate(): Tile {
     this.orientation = NEXT_CLOCKWISE[this.orientation];
-    this.element = TileWireCorner.resources.getClone(this.orientation, this);
+    this.element = WireCorner.resources.getClone(this.orientation, this);
     return this;
   }
 
@@ -77,14 +83,16 @@ export class TileWireCorner implements Tile {
 }
 
 
-export class TileWireCross implements Tile {
+export class WireCross implements Tile {
   static resources = new TileResources();
 
   orientation = Orientation.EAST;
-  element: HTMLElement = TileWireCross.resources.getClone(this.orientation, this);
+  element: HTMLElement = WireCross.resources.getClone(this.orientation, this);
+  x = 0;
+  y = 0;
 
   static async load(): Promise<void> {
-    await TileWireCross.resources.buildRotations(Orientation.EAST, 1, "tile-wire-cross");
+    await WireCross.resources.buildRotations(Orientation.EAST, 1, "tile-wire-cross");
   }
 
   rotate(): Tile {

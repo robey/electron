@@ -1,7 +1,7 @@
 import { Electron } from "./electron";
 import { nextFrame } from "./events";
 import { ActionType, Orientation, Tile } from "./models";
-import { loadTiles, moveTile, setTileDragEvents, TileWire, TileWireCorner } from "./tiles";
+import { loadTiles, moveTile, setTileDragEvents, Wire, WireCorner } from "./tiles";
 import { TileGrid } from "./tile_grid";
 import { Toolbox } from "./toolbox";
 
@@ -78,9 +78,9 @@ export class Board {
     this.setSpeed(this.speed);
 
     // FIXME
-    this.tileGrid.setAt(3, 1, new TileWire());
-    this.tileGrid.setAt(4, 1, new TileWireCorner());
-    this.tileGrid.setAt(4, 2, new TileWire().rotate());
+    this.tileGrid.setAt(3, 1, new Wire());
+    this.tileGrid.setAt(4, 1, new WireCorner());
+    this.tileGrid.setAt(4, 2, new Wire().rotate());
     this.electrons.push(new Electron(3, 1));
     (document.getElementById("display-speed") as HTMLElement).textContent = "2Hz";
 

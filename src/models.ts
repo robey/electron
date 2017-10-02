@@ -84,4 +84,8 @@ export interface Tile {
 
   // the current HTML element to draw.
   element: HTMLElement;
+
+  // location on the board, if any.
+  x: number;
+  y: number;
 }
