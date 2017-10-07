@@ -1,11 +1,14 @@
+import { calculateTrueOffset } from "./dom";
 import { Electron } from "./electron";
 import { nextFrame } from "./events";
 import { ActionType, Orientation, Tile } from "./models";
+import { loadGame, saveGame } from "./storage";
 import { loadTiles, moveTile, setTileDragEvents, Wire, WireCorner } from "./tiles";
 import { TileGrid } from "./tile_grid";
 import { Toolbox } from "./toolbox";
 
 const DEFAULT_TILE_SIZE = 40;
+const DEFAULT_SPEED = 500;
 
 let board: Board;
 
@@ -15,7 +18,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 });
 
 window.addEventListener("load", async () => {
-  await board.load();
+  await board.init();
 });
 
 export class Board {
@@ -34,7 +37,7 @@ export class Board {
   yOffset = 0;
 
   running = false;
-  speed = 500;
+  speed = DEFAULT_SPEED;
   tileGrid: TileGrid;
   toolbox: Toolbox;
   electrons: Electron[] = [];
@@ -68,19 +71,17 @@ export class Board {
     this.tileStyle = cssRules.filter(x => x.selectorText == ".tile")[0].style;
   }
 
-  async load(): Promise<void> {
+  async init(): Promise<void> {
     setTileDragEvents((event, tile) => this.dragTile(event, tile), (event, tile) => this.dragEnded());
     await loadTiles();
     Electron.load();
 
     this.tileGrid = new TileGrid();
     this.toolbox = new Toolbox(this);
+    this.load();
     this.setSpeed(this.speed);
 
     // FIXME
-    this.tileGrid.setAt(3, 1, new Wire());
-    this.tileGrid.setAt(4, 1, new WireCorner());
-    this.tileGrid.setAt(4, 2, new Wire().rotate());
     this.electrons.push(new Electron(3, 1));
     (document.getElementById("display-speed") as HTMLElement).textContent = "2Hz";
 
@@ -116,6 +117,7 @@ export class Board {
     this.speed = speed;
     const hz = Math.round(1000 / speed);
     this.speedDisplay.textContent = `${hz}Hz`;
+    this.save();
   }
 
   start() {
@@ -322,6 +324,7 @@ export class Board {
         break;
       case "Enter":
         this.start();
+        event.preventDefault();
         break;
     }
   }
@@ -381,8 +384,9 @@ export class Board {
   }
 
   dragTile(event: DragEvent, tile: Tile) {
-    const dragOffsetX = event.clientX - (event.target as HTMLElement).offsetLeft;
-    const dragOffsetY = event.clientY - (event.target as HTMLElement).offsetTop;
+    const [ xOffset, yOffset ] = calculateTrueOffset(event.target as HTMLElement);
+    const dragOffsetX = event.clientX - xOffset;
+    const dragOffsetY = event.clientY - yOffset;
     let [ x, y ] = this.pixelToTile(event.clientX, event.clientY);
     this.tileGrid.setAt(x, y, undefined);
 
@@ -406,10 +410,12 @@ export class Board {
     this.div.removeChild(tile.element);
     tile.rotate();
     this.drawTile();
+    this.save();
   }
 
   removeTile() {
     this.putTile(undefined);
+    this.save();
   }
 
   putTile(tile: Tile | undefined, x?: number, y?: number) {
@@ -419,6 +425,26 @@ export class Board {
     if (oldTile) this.div.removeChild(oldTile.element);
     this.tileGrid.setAt(x, y, tile);
     this.drawTile(x, y);
+    this.save();
+  }
+
+  load() {
+    const savedBoard = localStorage.getItem("saved-board");
+    if (savedBoard) loadGame(savedBoard, this.tileGrid);
+    const prefsString = localStorage.getItem("saved-prefs");
+    if (prefsString) {
+      try {
+        const prefs = JSON.parse(prefsString);
+        this.speed = prefs.speed || DEFAULT_SPEED;
+      } catch (error) {
+        console.log("Invalid prefs", prefsString);
+      }
+    }
+  }
+
+  save() {
+    localStorage.setItem("saved-board", saveGame(this.tileGrid));
+    localStorage.setItem("saved-prefs", JSON.stringify({ speed: this.speed }));
   }
 
   tileToPixel(x: number, y: number): [ number, number ] {

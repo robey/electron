@@ -75,10 +75,14 @@ export const FLIP = {
 };
 
 export interface Tile {
-  // change to the next orientation (by user request).
+  // change to the next orientation, either by user request, or to a specific
+  // variant because we're loading from storage.
   // this implicitly invalidates 'element'.
-  rotate(): Tile;
+  rotate(variant?: number): Tile;
 
+  // current variant, for saving to storage.
+  variant: number;
+  
   // what should happen if an electron enters?
   action(orientation: Orientation): Action;
 

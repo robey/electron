@@ -13,10 +13,14 @@ export class Wire implements Tile {
     await Wire.resources.buildRotations(Orientation.EAST, 4, "tile-wire-h");
   }
 
-  rotate(): Tile {
-    this.orientation = FLIP[this.orientation];
+  rotate(variant?: number): Tile {
+    this.orientation = variant === undefined ? FLIP[this.orientation] : variant as Orientation;
     this.element = Wire.resources.getClone(this.orientation, this);
     return this;
+  }
+
+  get variant(): number {
+    return this.orientation;
   }
 
   action(orientation: Orientation): Action {
@@ -43,10 +47,14 @@ export class WireOneWay implements Tile {
     await WireOneWay.resources.buildRotations(Orientation.EAST, 4, "tile-wire-oneway");
   }
 
-  rotate(): Tile {
-    this.orientation = NEXT_CLOCKWISE[this.orientation];
+  rotate(variant?: number): Tile {
+    this.orientation = variant === undefined ? NEXT_CLOCKWISE[this.orientation] : variant as Orientation;
     this.element = WireOneWay.resources.getClone(this.orientation, this);
     return this;
+  }
+
+  get variant(): number {
+    return this.orientation;
   }
 
   action(orientation: Orientation): Action {
@@ -69,10 +77,14 @@ export class WireCorner implements Tile {
     await WireCorner.resources.buildRotations(Orientation.SOUTH, 4, "tile-wire-corner");
   }
 
-  rotate(): Tile {
-    this.orientation = NEXT_CLOCKWISE[this.orientation];
+  rotate(variant?: number): Tile {
+    this.orientation = variant === undefined ? NEXT_CLOCKWISE[this.orientation] : variant as Orientation;
     this.element = WireCorner.resources.getClone(this.orientation, this);
     return this;
+  }
+
+  get variant(): number {
+    return this.orientation;
   }
 
   action(orientation: Orientation): Action {
@@ -95,8 +107,12 @@ export class WireCross implements Tile {
     await WireCross.resources.buildRotations(Orientation.EAST, 1, "tile-wire-cross");
   }
 
-  rotate(): Tile {
+  rotate(variant?: number): Tile {
     return this;
+  }
+
+  get variant(): number {
+    return 0;
   }
 
   action(orientation: Orientation): Action {

@@ -21,6 +21,10 @@ export class TileGrid {
   // keys are "xoffset,yoffset"
   map: { [coord: string]: Chunk } = {};
 
+  clear() {
+    this.map = {};
+  }
+  
   chunkFor(x: number, y: number): Chunk | undefined {
     const [ xOffset, yOffset ] = offsets(x, y);
     return this.map[`${xOffset},${yOffset}`];
@@ -56,7 +60,7 @@ export class TileGrid {
     });
   }
 
-  *tiles(): Iterator<Tile> {
+  *tiles(): Iterable<Tile> {
     for (const chunk of Object.keys(this.map).map(key => this.map[key])) {
       for (let i = 0; i < chunk.size * chunk.size; i++) {
         const tile = chunk.grid[i];
