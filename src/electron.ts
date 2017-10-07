@@ -1,4 +1,4 @@
-import { once, nextFrame } from "./events";
+import { once, nextFrame } from "./common/events";
 import { Orientation, ORIENTATION_NAME } from "./models";
 
 export class Electron {

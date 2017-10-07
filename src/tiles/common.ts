@@ -1,4 +1,4 @@
-import { once } from "../events";
+import { once } from "../common/events";
 import { NEXT_CLOCKWISE, NEXT_MATHWISE, OPPOSITE, Orientation, Tile } from "../models";
 
 // total HACK

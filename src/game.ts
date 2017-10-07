@@ -1,6 +1,6 @@
-import { calculateTrueOffset } from "./dom";
+import { calculateTrueOffset } from "./common/dom";
+import { nextFrame } from "./common/events";
 import { Electron } from "./electron";
-import { nextFrame } from "./events";
 import { ActionType, Orientation, Tile } from "./models";
 import { loadGame, saveGame } from "./storage";
 import { loadTiles, moveTile, setTileDragEvents, Wire, WireCorner } from "./tiles";
@@ -79,7 +79,6 @@ export class Board {
     this.tileGrid = new TileGrid();
     this.toolbox = new Toolbox(this);
     this.load();
-    this.setSpeed(this.speed);
 
     // FIXME
     this.electrons.push(new Electron(3, 1));
@@ -435,7 +434,7 @@ export class Board {
     if (prefsString) {
       try {
         const prefs = JSON.parse(prefsString);
-        this.speed = prefs.speed || DEFAULT_SPEED;
+        this.setSpeed(prefs.speed || DEFAULT_SPEED);
       } catch (error) {
         console.log("Invalid prefs", prefsString);
       }

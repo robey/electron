@@ -1,4 +1,4 @@
-import { range } from "./arrays";
+import { range } from "./common/arrays";
 import { Tile } from "./models";
 import { TILES } from "./tiles";
 import { TileGrid } from "./tile_grid";
