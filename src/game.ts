@@ -1,7 +1,10 @@
 import { calculateTrueOffset } from "./common/dom";
 import { nextFrame } from "./common/events";
+import { Animation } from "./animate";
 import { Electron } from "./electron";
+import { setupKeyboard } from "./keyboard";
 import { ActionType, Orientation, Tile } from "./models";
+import { setupMouse } from "./mouse";
 import { loadGame, saveGame } from "./storage";
 import { loadTiles, moveTile, setTileDragEvents, Wire, WireCorner } from "./tiles";
 import { TileGrid } from "./tile_grid";
@@ -36,11 +39,10 @@ export class Board {
   xOffset = 0;
   yOffset = 0;
 
-  running = false;
   speed = DEFAULT_SPEED;
   tileGrid: TileGrid;
   toolbox: Toolbox;
-  electrons: Electron[] = [];
+  animation = new Animation(this);
 
   div: HTMLElement;
   cursor: HTMLImageElement;
@@ -79,35 +81,14 @@ export class Board {
     this.tileGrid = new TileGrid();
     this.toolbox = new Toolbox(this);
     this.load();
+    // draw the speed display:
+    this.setSpeed(this.speed);
 
     // FIXME
-    this.electrons.push(new Electron(3, 1));
-    (document.getElementById("display-speed") as HTMLElement).textContent = "2Hz";
+    this.animation.electrons.push(new Electron(3, 1));
 
-    // support for "keypress" appears to have been silently removed from chrome.
-    document.addEventListener("keydown", event => this.keypress(event));
-    document.addEventListener("click", event => this.click(event));
-    document.addEventListener("dblclick", event => this.doubleClick(event));
-
-    // allow things to be dragged into the game board
-    this.div.addEventListener("dragenter", event => this.dragenter(event));
-    this.div.addEventListener("dragover", event => this.dragover(event));
-    this.div.addEventListener("dragleave", event => this.dragleave(event));
-    this.div.addEventListener("drop", event => this.drop(event));
-
-    // buttons
-    this.buttonFaster.addEventListener("click", event => {
-      this.faster();
-      event.preventDefault();
-    });
-    this.buttonSlower.addEventListener("click", event => {
-      this.slower();
-      event.preventDefault();
-    });
-    this.buttonPlay.addEventListener("click", event => {
-      this.start();
-      event.preventDefault();
-    });
+    setupKeyboard(this);
+    setupMouse(this);
 
     this.resize();
   }
@@ -119,37 +100,6 @@ export class Board {
     this.save();
   }
 
-  start() {
-    console.log("start!");
-    if (this.running) return this.stop();
-    this.running = true;
-    this.hideCursor();
-    setTimeout(() => this.play(), 10);
-  }
-
-  play() {
-    try {
-      if (!this.running) return;
-      if (this.electrons.length == 0) {
-        this.stop();
-        return;
-      }
-      this.tick(this.speed).then(() => this.play());
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  stop() {
-    console.log("stop!");
-    this.running = false;
-    this.positionCursor();
-    if (this.electrons.length == 0) {
-      this.electrons.push(new Electron(3, 1));
-      this.drawElectron(this.electrons[0]);
-    }
-  }
-
   faster() {
     if (this.speed > 33) this.setSpeed(this.speed / 2);
   }
@@ -158,62 +108,8 @@ export class Board {
     if (this.speed < 1000) this.setSpeed(this.speed * 2);
   }
 
-  async tick(speed: number): Promise<void> {
-    console.log("tick:", Date.now(), this.electrons.map(e => e.toString()).join(", "));
-    this.electrons.filter(e => !e.alive).map(e => {
-      if (this.div == e.element.parentNode) this.div.removeChild(e.element);
-    });
-    this.electrons = this.electrons.filter(e => e.alive);
 
-    await Promise.all(this.electrons.map(async e => {
-      const tile = this.tileGrid.getAt(e.x, e.y);
-      if (!tile) return this.removeElectron(e, speed);
-
-      const action = tile.action(e.orientation);
-      switch (action.type) {
-        case ActionType.DIE:
-          return this.removeElectron(e, speed);
-        case ActionType.MOVE:
-          return this.moveElectron(e, action.orientation, speed);
-      }
-    }));
-
-    await nextFrame();
-  }
-
-  async removeElectron(electron: Electron, speed: number): Promise<void> {
-    electron.alive = false;
-    await electron.vanish(speed);
-    this.div.removeChild(electron.element);
-  }
-
-  async moveElectron(electron: Electron, orientation: Orientation, speed: number): Promise<void> {
-    electron.orientation = orientation;
-    switch (orientation) {
-      case Orientation.NORTH:
-        electron.y--;
-        if (speed > 50) await electron.pushTo(0, -this.tileSize, speed);
-        break;
-      case Orientation.EAST:
-        electron.x++;
-        if (speed > 50) await electron.pushTo(this.tileSize, 0, speed);
-        break;
-      case Orientation.SOUTH:
-        electron.y++;
-        if (speed > 50) await electron.pushTo(0, this.tileSize, speed);
-        break;
-      case Orientation.WEST:
-        electron.x--;
-        if (speed > 50) await electron.pushTo(-this.tileSize, 0, speed);
-        break;
-    }
-    this.drawElectron(electron);
-  }
-
-  async drawElectron(electron: Electron): Promise<void> {
-    const [ xPixel, yPixel ] = this.tileToPixel(electron.x, electron.y);
-    this.div.appendChild(electron.draw(xPixel, yPixel));
-  }
+  // ----- drawing
 
   resize() {
     this.tileStyle.width = `${this.tileSize}px`;
@@ -238,7 +134,7 @@ export class Board {
       }
     }
 
-    this.electrons.forEach(e => this.drawElectron(e));
+    this.animation.redraw();
     this.positionCursor();
   }
 
@@ -263,85 +159,6 @@ export class Board {
     this.cursor.style.left = `${xPixel}px`;
     this.cursor.style.top = `${yPixel}px`;
     this.cursor.style.visibility = "visible";
-  }
-
-  keypress(event: KeyboardEvent) {
-    console.log(event);
-    switch (event.key) {
-      case "ArrowUp":
-        this.cursorY--;
-        this.positionCursor();
-        if (event.ctrlKey || this.cursorY < this.viewTop) {
-          this.viewTop--;
-          this.redraw();
-        }
-        event.preventDefault();
-        break;
-      case "ArrowDown":
-        this.cursorY++;
-        this.positionCursor();
-        if (event.ctrlKey || this.cursorY >= this.viewTop + this.viewHeight) {
-          this.viewTop++;
-          this.redraw();
-        }
-        event.preventDefault();
-        break;
-      case "ArrowLeft":
-        this.cursorX--;
-        this.positionCursor();
-        if (event.ctrlKey || this.cursorX < this.viewLeft) {
-          this.viewLeft--;
-          this.redraw();
-        }
-        event.preventDefault();
-        break;
-      case "ArrowRight":
-        this.cursorX++;
-        this.positionCursor();
-        if (event.ctrlKey || this.cursorX >= this.viewLeft + this.viewWidth) {
-          this.viewLeft++;
-          this.redraw();
-        }
-        event.preventDefault();
-        break;
-      case "+":
-        this.faster();
-        event.preventDefault();
-        break;
-      case "-":
-        this.slower();
-        event.preventDefault();
-        break;
-      case " ":
-        this.rotate();
-        event.preventDefault();
-        break;
-      case "Backspace":
-      case "Delete":
-        this.removeTile();
-        event.preventDefault();
-        break;
-      case "Enter":
-        this.start();
-        event.preventDefault();
-        break;
-    }
-  }
-
-
-  // ----- events for mouse people
-
-  click(event: MouseEvent) {
-    console.log("click", event);
-    let [ x, y ] = this.pixelToTile(event.x, event.y);
-    this.positionCursor(x, y);
-    event.preventDefault();
-  }
-
-  doubleClick(event: MouseEvent) {
-    console.log("doubleclick", event);
-    // "click" event already moved the cursor.
-    this.rotate();
   }
 
 
@@ -402,6 +219,9 @@ export class Board {
       }
     );
   }
+
+
+  // ----- operations
 
   rotate() {
     const tile = this.tileGrid.getAt(this.cursorX, this.cursorY);
