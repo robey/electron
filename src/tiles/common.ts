@@ -33,15 +33,25 @@ export class TileResources {
 
   // build the various rotations, given an initial image
   async buildRotations(originalOrientation: Orientation, count: number, ...ids: string[]): Promise<void> {
-    const originals = ids.map(id => document.getElementById(id) as HTMLImageElement);
-    const image = await stackImages(originals);
-    this.images[originalOrientation] = rotateImage(image, 0);
+    const firstImage = document.getElementById(ids[0]) as HTMLImageElement;
+    const layers = ids.slice(1).map(id => document.getElementById(id) as HTMLImageElement);
+    const rotatedFirst = {
+      [originalOrientation]: firstImage,
+      [NEXT_CLOCKWISE[originalOrientation]]: rotateImage(firstImage, Math.PI / 2),
+      [OPPOSITE[originalOrientation]]: rotateImage(firstImage, Math.PI),
+      [NEXT_MATHWISE[originalOrientation]]: rotateImage(firstImage, -Math.PI / 2),
+    };
+
+    this.images[originalOrientation] = await stackImages([ firstImage ].concat(layers));
     if (count > 1) {
-      this.images[NEXT_CLOCKWISE[originalOrientation]] = rotateImage(image, Math.PI / 2);
+      const orient = NEXT_CLOCKWISE[originalOrientation];
+      this.images[orient] = await stackImages([ rotatedFirst[orient] ].concat(layers));
     }
     if (count > 2) {
-      this.images[NEXT_MATHWISE[originalOrientation]] = rotateImage(image, -Math.PI / 2);
-      this.images[OPPOSITE[originalOrientation]] = rotateImage(image, Math.PI);
+      const orient1 = NEXT_MATHWISE[originalOrientation];
+      const orient2 = OPPOSITE[originalOrientation];
+      this.images[orient1] = await stackImages([ rotatedFirst[orient1] ].concat(layers));
+      this.images[orient2] = await stackImages([ rotatedFirst[orient2] ].concat(layers));
     }
   }
 }

@@ -24,7 +24,7 @@ export class TileGrid {
   clear() {
     this.map = {};
   }
-  
+
   chunkFor(x: number, y: number): Chunk | undefined {
     const [ xOffset, yOffset ] = offsets(x, y);
     return this.map[`${xOffset},${yOffset}`];
@@ -60,11 +60,20 @@ export class TileGrid {
     });
   }
 
-  *tiles(): Iterable<Tile> {
+  tiles(): Iterable<Tile> {
+    return this.filterMapTiles(x => true, x => x);
+  }
+
+  filterTiles(f: (tile: Tile) => boolean): Iterable<Tile> {
+    return this.filterMapTiles(f, x => x);
+  }
+
+  // ES6 bug: they "forgot" to add map/filter to iterables.
+  *filterMapTiles<A>(f: (tile: Tile) => boolean, m: (tile: Tile) => A): Iterable<A> {
     for (const chunk of Object.keys(this.map).map(key => this.map[key])) {
       for (let i = 0; i < chunk.size * chunk.size; i++) {
         const tile = chunk.grid[i];
-        if (tile) yield tile;
+        if (tile && f(tile)) yield m(tile);
       }
     }
   }

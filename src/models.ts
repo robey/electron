@@ -22,6 +22,29 @@ export class Action {
   }
 }
 
+export enum TickActionType {
+  IDLE,
+  STOP_POLLING,
+  SPAWN
+}
+
+export class TickAction {
+  constructor(
+    public type: TickActionType,
+    public orientation: Orientation = Orientation.NORTH
+  ) {
+    // pass
+  }
+
+  static idle = new TickAction(TickActionType.IDLE);
+
+  static stopPolling = new TickAction(TickActionType.STOP_POLLING);
+
+  static spawn(orientation: Orientation) {
+    return new TickAction(TickActionType.SPAWN, orientation);
+  }
+}
+
 export const ORIENTATION_NAME = {
   [Orientation.NORTH]: "north",
   [Orientation.EAST]: "east",
@@ -82,9 +105,15 @@ export interface Tile {
 
   // current variant, for saving to storage.
   variant: number;
-  
+
   // what should happen if an electron enters?
   action(orientation: Orientation): Action;
+
+  // if we should check for an action on every cycle:
+  onTick?: () => TickAction;
+
+  // if some internal state should be cleared before each animation:
+  reset?: () => void;
 
   // the current HTML element to draw.
   element: HTMLElement;

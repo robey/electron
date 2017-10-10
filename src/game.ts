@@ -84,9 +84,6 @@ export class Board {
     // draw the speed display:
     this.setSpeed(this.speed);
 
-    // FIXME
-    this.animation.electrons.push(new Electron(3, 1));
-
     setupKeyboard(this);
     setupMouse(this);
 
