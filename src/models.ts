@@ -8,6 +8,8 @@ export enum ElectronActionType {
 }
 
 export class ElectronAction {
+  action?: Action;
+
   constructor(
     public type: ElectronActionType,
     public orientation: Orientation = Orientation.NORTH
@@ -20,25 +22,38 @@ export class ElectronAction {
   static move(orientation: Orientation) {
     return new ElectronAction(ElectronActionType.MOVE, orientation);
   }
+
+  withAction(action: Action): ElectronAction {
+    const rv = new ElectronAction(this.type, this.orientation);
+    rv.action = action;
+    return rv;
+  }
 }
 
 export enum ActionType {
   IDLE,
-  SPAWN
+  SPAWN,
+  CHANGE_IMAGE
 }
 
 export class Action {
   constructor(
     public type: ActionType,
-    public orientation: Orientation = Orientation.NORTH
+    public orientation: Orientation = Orientation.NORTH,
+    public oldImage?: HTMLElement,
+    public newImage?: HTMLElement
   ) {
     // pass
   }
 
   static idle = new Action(ActionType.IDLE);
 
-  static spawn(orientation: Orientation) {
+  static spawn(orientation: Orientation): Action {
     return new Action(ActionType.SPAWN, orientation);
+  }
+
+  static changeImage(oldImage: HTMLElement, newImage: HTMLElement): Action {
+    return new Action(ActionType.CHANGE_IMAGE, undefined, oldImage, newImage);
   }
 }
 

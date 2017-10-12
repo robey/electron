@@ -1,4 +1,5 @@
-import { nextFrame } from "./common/events";
+import { moveToPixel } from "./common/dom";
+import { nextFrame, once } from "./common/events";
 import { Board } from "./game";
 import { Electron } from "./electron";
 import { Action, ActionType, ElectronAction, ElectronActionType, Orientation, Tile } from "./models";
@@ -11,7 +12,13 @@ export class Animation {
   deadTicks = 0;
 
   electrons: Electron[] = [];
-  tickTiles: Tile[] = [];
+  activeTiles: Tile[] = [];
+
+  // electrons generated during a tick, waiting to become real:
+  newElectrons: Electron[] = [];
+
+  // long-running animations (transitions) that will run concurrently during this tick:
+  animations: Array<Promise<void>> = [];
 
   constructor(public board: Board) {
     // pass
@@ -22,7 +29,8 @@ export class Animation {
     if (this.running) return this.stop();
 
     for (const t of this.board.tileGrid.filterTiles(t => t.reset !== undefined)) if (t.reset) t.reset();
-    this.tickTiles = [...this.board.tileGrid.filterTiles(t => t.onTick !== undefined)];
+    this.activeTiles = [...this.board.tileGrid.filterTiles(t => t.activated || false)];
+    this.board.redraw();
 
     this.running = true;
     this.board.hideCursor();
@@ -56,54 +64,62 @@ export class Animation {
 
   async tick(speed: number): Promise<void> {
     console.log("tick:", Date.now(), this.electrons.map(e => e.toString()).join(", "));
+    this.activeTiles = this.activeTiles.filter(tile => tile.activated);
     this.electrons = this.electrons.filter(e => e.alive);
 
-    const newElectrons = this.probeActivatedTiles();
-    await this.moveLivingElectrons(speed);
-    newElectrons.forEach(e => {
+    this.activeTiles.forEach(tile => {
+      if (tile.onTick) this.processAction(tile, tile.onTick(), speed);
+    });
+    this.electrons.forEach(e => this.processElectron(e, speed));
+    await Promise.all(this.animations);
+
+    this.newElectrons.forEach(e => {
       this.drawElectron(e);
       this.electrons.push(e);
     });
 
+    this.newElectrons.splice(0, this.newElectrons.length);
+    this.animations.splice(0, this.animations.length);
     await nextFrame();
   }
 
-  probeActivatedTiles(): Electron[] {
-    const newElectrons: Electron[] = [];
-
-    this.tickTiles.forEach(async tile => {
-      if (!tile.onTick) return;
-      const action = tile.onTick();
-      switch (action.type) {
-        case ActionType.IDLE:
-          break;
-        case ActionType.SPAWN:
-          const e = new Electron(tile.x, tile.y);
-          e.orientation = action.orientation;
-          newElectrons.push(e);
-          break;
-      }
-    });
-
-    // remove tiles that are no longer activated.
-    this.tickTiles = this.tickTiles.filter(tile => tile.activated);
-
-    return newElectrons;
+  processAction(tile: Tile, action: Action, speed: number) {
+    switch (action.type) {
+      case ActionType.IDLE:
+        break;
+      case ActionType.SPAWN:
+        const e = new Electron(tile.x, tile.y);
+        e.orientation = action.orientation;
+        this.newElectrons.push(e);
+        break;
+      case ActionType.CHANGE_IMAGE:
+        if (action.oldImage && action.newImage) {
+          this.animations.push(this.changeImage(tile, action.oldImage, action.newImage, speed));
+        }
+        break;
+    }
   }
 
-  async moveLivingElectrons(speed: number): Promise<void> {
-    await Promise.all(this.electrons.map(async e => {
-      const tile = this.board.tileGrid.getAt(e.x, e.y);
-      if (!tile) return this.removeElectron(e, speed);
+  processElectron(electron: Electron, speed: number) {
+    const tile = this.board.tileGrid.getAt(electron.x, electron.y);
+    const electronAction = tile && tile.onElectron ? tile.onElectron(electron.orientation) : ElectronAction.die;
 
-      const action = tile.onElectron ? tile.onElectron(e.orientation) : ElectronAction.die;
-      switch (action.type) {
-        case ElectronActionType.DIE:
-          return this.removeElectron(e, speed);
-        case ElectronActionType.MOVE:
-          return this.moveElectron(e, action.orientation, speed);
+    switch (electronAction.type) {
+      case ElectronActionType.DIE:
+        this.animations.push(this.removeElectron(electron, speed));
+        break;
+      case ElectronActionType.MOVE:
+        this.animations.push(this.moveElectron(electron, electronAction.orientation, speed));
+        break;
+    }
+
+    if (electronAction.action && tile) {
+      this.processAction(tile, electronAction.action, speed);
+      if (tile.activated) {
+        this.activeTiles = this.activeTiles.filter(t => t !== tile);
+        this.activeTiles.push(tile);
       }
-    }));
+    }
   }
 
   redraw() {
@@ -142,5 +158,25 @@ export class Animation {
         break;
     }
     this.drawElectron(electron);
+  }
+
+  async changeImage(tile: Tile, oldImage: HTMLElement, newImage: HTMLElement, speed: number): Promise<void> {
+    const [ xPixel, yPixel ] = this.board.tileToPixel(tile.x, tile.y);
+    this.board.div.appendChild(oldImage);
+    this.board.div.appendChild(newImage);
+    moveToPixel(oldImage, xPixel, yPixel);
+    moveToPixel(newImage, xPixel, yPixel);
+    newImage.style.zIndex = "1";
+    newImage.style.opacity = "0";
+    newImage.style.transition = `opacity ${speed / 1000}s ease-in-out`;
+    // animate!
+    await nextFrame();
+    newImage.style.opacity = "1";
+    await once(newImage, "transitionend", (event: TransitionEvent) => {
+      newImage.style.transition = null;
+    });
+    await nextFrame();
+    this.board.div.removeChild(oldImage);
+    newImage.style.zIndex = "0";
   }
 }
