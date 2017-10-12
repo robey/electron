@@ -1,3 +1,4 @@
+import { moveToPixel } from "./common/dom";
 import { once, nextFrame } from "./common/events";
 import { Orientation, ORIENTATION_NAME } from "./models";
 
@@ -24,8 +25,7 @@ export class Electron {
   }
 
   draw(x: number, y: number): HTMLElement {
-    this.element.style.left = `${x}px`;
-    this.element.style.top = `${y}px`;
+    moveToPixel(this.element, x, y);
     return this.element;
   }
 

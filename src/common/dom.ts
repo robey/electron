@@ -12,3 +12,8 @@ export function calculateTrueOffset(target: HTMLElement): [ number, number ] {
   }
   return [ x, y ];
 }
+
+export function moveToPixel(element: HTMLElement, x: number, y: number) {
+  element.style.left = `${x}px`;
+  element.style.top = `${y}px`;
+}
