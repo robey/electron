@@ -2,9 +2,29 @@ export enum Orientation {
   NORTH, EAST, SOUTH, WEST
 }
 
-export enum ActionType {
+export enum ElectronActionType {
   DIE,
   MOVE,
+}
+
+export class ElectronAction {
+  constructor(
+    public type: ElectronActionType,
+    public orientation: Orientation = Orientation.NORTH
+  ) {
+    // pass
+  }
+
+  static die = new ElectronAction(ElectronActionType.DIE);
+
+  static move(orientation: Orientation) {
+    return new ElectronAction(ElectronActionType.MOVE, orientation);
+  }
+}
+
+export enum ActionType {
+  IDLE,
+  SPAWN
 }
 
 export class Action {
@@ -15,33 +35,10 @@ export class Action {
     // pass
   }
 
-  static die = new Action(ActionType.DIE);
-
-  static move(orientation: Orientation) {
-    return new Action(ActionType.MOVE, orientation);
-  }
-}
-
-export enum TickActionType {
-  IDLE,
-  STOP_POLLING,
-  SPAWN
-}
-
-export class TickAction {
-  constructor(
-    public type: TickActionType,
-    public orientation: Orientation = Orientation.NORTH
-  ) {
-    // pass
-  }
-
-  static idle = new TickAction(TickActionType.IDLE);
-
-  static stopPolling = new TickAction(TickActionType.STOP_POLLING);
+  static idle = new Action(ActionType.IDLE);
 
   static spawn(orientation: Orientation) {
-    return new TickAction(TickActionType.SPAWN, orientation);
+    return new Action(ActionType.SPAWN, orientation);
   }
 }
 
@@ -107,10 +104,11 @@ export interface Tile {
   variant: number;
 
   // what should happen if an electron enters?
-  action(orientation: Orientation): Action;
+  onElectron?: (orientation: Orientation) => ElectronAction;
 
   // if we should check for an action on every cycle:
-  onTick?: () => TickAction;
+  activated?: boolean;
+  onTick?: () => Action;
 
   // if some internal state should be cleared before each animation:
   reset?: () => void;

@@ -1,13 +1,14 @@
 import { Board } from "./game";
 import { Tile } from "./models";
-import { PowerOnce, Wire, WireCorner, WireCross, WireOneWay } from "./tiles";
+import { Light, PowerOnce, Wire, WireCorner, WireCross, WireOneWay } from "./tiles";
 
 const TOOLBOX_TILES: { [id: string]: { new(): Tile } } = {
   "toolbox-wire-h": Wire,
   "toolbox-wire-oneway": WireOneWay,
   "toolbox-wire-corner": WireCorner,
   "toolbox-wire-cross": WireCross,
-  "toolbox-power-once": PowerOnce
+  "toolbox-power-once": PowerOnce,
+  "toolbox-light": Light
 };
 
 export class Toolbox {

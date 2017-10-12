@@ -1,5 +1,5 @@
-import { Action, NEXT_CLOCKWISE, Orientation, TickAction, Tile } from "../models";
-import { TileResources } from "./common";
+import { Action, ElectronAction, NEXT_CLOCKWISE, Orientation, Tile } from "../models";
+import { TileResources } from "./resources";
 
 export class PowerOnce implements Tile {
   static resources = new TileResources();
@@ -9,10 +9,13 @@ export class PowerOnce implements Tile {
   x = 0;
   y = 0;
 
-  triggered = false;
+  activated = true;
 
   static async load(): Promise<void> {
-    await PowerOnce.resources.buildRotations(Orientation.NORTH, 4, "tile-wire-stub-north", "tile-power");
+    const stub = this.resources.byId("tile-wire-stub-north");
+    const orientations = await this.resources.buildRotations(stub, Orientation.NORTH);
+    const stack = await this.resources.stackRotations(orientations, this.resources.byIds("tile-power"));
+    this.resources.fillOrientations(stack);
   }
 
   rotate(variant?: number): Tile {
@@ -25,17 +28,16 @@ export class PowerOnce implements Tile {
     return this.orientation;
   }
 
-  action(orientation: Orientation): Action {
-    return Action.move(orientation);
+  onElectron(orientation: Orientation): ElectronAction {
+    return ElectronAction.move(orientation);
   }
 
-  onTick(): TickAction {
-    if (this.triggered) return TickAction.stopPolling;
-    this.triggered = true;
-    return TickAction.spawn(this.orientation);
+  onTick(): Action {
+    this.activated = false;
+    return Action.spawn(this.orientation);
   }
 
   reset() {
-    this.triggered = false;
+    this.activated = true;
   }
 }

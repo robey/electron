@@ -1,11 +1,12 @@
 import { Tile } from "./models";
 
-import { moveTile, setTileDragEvents, TileResources } from "./tiles/common";
-export { moveTile, setTileDragEvents, TileResources };
+import { setTileDragEvents, TileResources } from "./tiles/resources";
+export { setTileDragEvents, TileResources };
 
-import { Wire, WireCorner, WireCross, WireOneWay } from "./tiles/wires";
+import { Light } from "./tiles/light";
 import { PowerOnce } from "./tiles/power";
-export { PowerOnce, Wire, WireCorner, WireCross, WireOneWay };
+import { Wire, WireCorner, WireCross, WireOneWay } from "./tiles/wires";
+export { Light, PowerOnce, Wire, WireCorner, WireCross, WireOneWay };
 
 interface TileClass {
   load(): Promise<void>;
@@ -22,7 +23,8 @@ export const TILES: TileInfo[] = [
   { id: 2, type: WireCorner },
   { id: 3, type: WireCross },
   { id: 4, type: WireOneWay },
-  { id: 5, type: PowerOnce }
+  { id: 5, type: PowerOnce },
+  { id: 6, type: Light },
 ];
 
 /*
@@ -31,4 +33,11 @@ export const TILES: TileInfo[] = [
  */
 export async function loadTiles(): Promise<void> {
   await Promise.all(TILES.map(t => t.type.load()));
+}
+
+export function moveTile(tile: Tile, xPixel: number, yPixel: number) {
+  const element = tile.element;
+  element.style.left = `${xPixel}px`;
+  element.style.top = `${yPixel}px`;
+  return element;
 }

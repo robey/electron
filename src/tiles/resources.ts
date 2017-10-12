@@ -13,16 +13,17 @@ export function setTileDragEvents(
   globalDragEndHandler = dragEndHandler;
 }
 
+
 export class TileResources {
   primaryImage: HTMLImageElement;
-  images: { [orientation: number]: HTMLImageElement } = {};
+  images: { [variant: number]: HTMLImageElement } = {};
 
   load(id: string) {
     this.primaryImage = document.getElementById(id) as HTMLImageElement;
   }
 
-  getClone(orientation: number, tile: Tile) {
-    const rv = this.images[orientation].cloneNode(true) as HTMLElement;
+  getClone(variant: number, tile: Tile) {
+    const rv = this.images[variant].cloneNode(true) as HTMLElement;
     rv.removeAttribute("id");
     rv.classList.add("tile");
     rv.classList.add("tile-placed");
@@ -31,38 +32,52 @@ export class TileResources {
     return rv;
   }
 
-  // build the various rotations, given an initial image
-  async buildRotations(originalOrientation: Orientation, count: number, ...ids: string[]): Promise<void> {
-    const firstImage = document.getElementById(ids[0]) as HTMLImageElement;
-    const layers = ids.slice(1).map(id => document.getElementById(id) as HTMLImageElement);
-    const rotatedFirst = {
-      [originalOrientation]: firstImage,
-      [NEXT_CLOCKWISE[originalOrientation]]: rotateImage(firstImage, Math.PI / 2),
-      [OPPOSITE[originalOrientation]]: rotateImage(firstImage, Math.PI),
-      [NEXT_MATHWISE[originalOrientation]]: rotateImage(firstImage, -Math.PI / 2),
-    };
+  byId(id: string): HTMLImageElement {
+    return document.getElementById(id) as HTMLImageElement;
+  }
 
-    this.images[originalOrientation] = await stackImages([ firstImage ].concat(layers));
-    if (count > 1) {
-      const orient = NEXT_CLOCKWISE[originalOrientation];
-      this.images[orient] = await stackImages([ rotatedFirst[orient] ].concat(layers));
-    }
-    if (count > 2) {
-      const orient1 = NEXT_MATHWISE[originalOrientation];
-      const orient2 = OPPOSITE[originalOrientation];
-      this.images[orient1] = await stackImages([ rotatedFirst[orient1] ].concat(layers));
-      this.images[orient2] = await stackImages([ rotatedFirst[orient2] ].concat(layers));
+  byIds(...ids: string[]): HTMLImageElement[] {
+    return ids.map(id => this.byId(id));
+  }
+
+  stack(images: HTMLImageElement[]): Promise<HTMLImageElement> {
+    return stackImages(images);
+  }
+
+  async stackRotations(
+    orientations: Map<Orientation, HTMLImageElement>,
+    images: HTMLImageElement[]
+  ): Promise<Map<Orientation, HTMLImageElement>> {
+    return new Map(await Promise.all([...orientations.entries()].map(async ([ key, originalImage ]) => {
+      return [ key, await stackImages([ originalImage ].concat(images)) ] as [ Orientation, HTMLImageElement ];
+    })));
+  }
+
+  async buildRotations(
+    originalImage: HTMLImageElement,
+    originalOrientation: Orientation
+  ): Promise<Map<Orientation, HTMLImageElement>> {
+    const rv = new Map<Orientation, HTMLImageElement>();
+    const images = await Promise.all([
+      rotateImage(originalImage, 0),
+      rotateImage(originalImage, -Math.PI / 2),
+      rotateImage(originalImage, Math.PI),
+      rotateImage(originalImage, Math.PI / 2),
+    ]);
+    rv.set(originalOrientation, images[0]);
+    rv.set(NEXT_CLOCKWISE[originalOrientation], images[1]);
+    rv.set(OPPOSITE[originalOrientation], images[2]);
+    rv.set(NEXT_MATHWISE[originalOrientation], images[3]);
+    return rv;
+  }
+
+  fillOrientations(orientations: Map<Orientation, HTMLImageElement>) {
+    for (const [ key, image ] of orientations) {
+      this.images[key] = image;
     }
   }
 }
 
-
-export function moveTile(tile: Tile, xPixel: number, yPixel: number) {
-  const element = tile.element;
-  element.style.left = `${xPixel}px`;
-  element.style.top = `${yPixel}px`;
-  return element;
-}
 
 // assumes a square image.
 function rotateImage(original: HTMLImageElement, rotation: number): HTMLImageElement {
@@ -74,7 +89,7 @@ function rotateImage(original: HTMLImageElement, rotation: number): HTMLImageEle
   const center = original.width / 2;
   context.save();
   context.translate(center, center);
-  context.rotate(rotation);
+  context.rotate(-rotation);
   context.drawImage(original, -center, -center, original.width, original.height);
   context.restore();
 
@@ -83,7 +98,6 @@ function rotateImage(original: HTMLImageElement, rotation: number): HTMLImageEle
   image.classList.add("tile");
   return image;
 }
-(document as any).rotateImage = rotateImage;
 
 async function stackImages(images: HTMLImageElement[]): Promise<HTMLImageElement> {
   const canvas = document.createElement("canvas");

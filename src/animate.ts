@@ -1,7 +1,7 @@
 import { nextFrame } from "./common/events";
 import { Board } from "./game";
 import { Electron } from "./electron";
-import { Action, ActionType, Orientation, TickAction, TickActionType, Tile } from "./models";
+import { Action, ActionType, ElectronAction, ElectronActionType, Orientation, Tile } from "./models";
 
 // how many ticks will we allow with no electrons in play?
 const MAX_DEAD_TICKS = 10;
@@ -58,7 +58,7 @@ export class Animation {
     console.log("tick:", Date.now(), this.electrons.map(e => e.toString()).join(", "));
     this.electrons = this.electrons.filter(e => e.alive);
 
-    const newElectrons = this.probeTiles();
+    const newElectrons = this.probeActivatedTiles();
     await this.moveLivingElectrons(speed);
     newElectrons.forEach(e => {
       this.drawElectron(e);
@@ -68,20 +68,16 @@ export class Animation {
     await nextFrame();
   }
 
-  probeTiles(): Electron[] {
+  probeActivatedTiles(): Electron[] {
     const newElectrons: Electron[] = [];
-    const stopPolling: Tile[] = [];
 
     this.tickTiles.forEach(async tile => {
       if (!tile.onTick) return;
       const action = tile.onTick();
       switch (action.type) {
-        case TickActionType.IDLE:
+        case ActionType.IDLE:
           break;
-        case TickActionType.STOP_POLLING:
-          stopPolling.push(tile);
-          break;
-        case TickActionType.SPAWN:
+        case ActionType.SPAWN:
           const e = new Electron(tile.x, tile.y);
           e.orientation = action.orientation;
           newElectrons.push(e);
@@ -89,9 +85,8 @@ export class Animation {
       }
     });
 
-    if (stopPolling.length > 0) {
-      this.tickTiles = this.tickTiles.filter(tile => stopPolling.indexOf(tile) < 0);
-    }
+    // remove tiles that are no longer activated.
+    this.tickTiles = this.tickTiles.filter(tile => tile.activated);
 
     return newElectrons;
   }
@@ -101,11 +96,11 @@ export class Animation {
       const tile = this.board.tileGrid.getAt(e.x, e.y);
       if (!tile) return this.removeElectron(e, speed);
 
-      const action = tile.action(e.orientation);
+      const action = tile.onElectron ? tile.onElectron(e.orientation) : ElectronAction.die;
       switch (action.type) {
-        case ActionType.DIE:
+        case ElectronActionType.DIE:
           return this.removeElectron(e, speed);
-        case ActionType.MOVE:
+        case ElectronActionType.MOVE:
           return this.moveElectron(e, action.orientation, speed);
       }
     }));

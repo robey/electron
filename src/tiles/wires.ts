@@ -1,5 +1,5 @@
-import { Action, FLIP, NEXT_CLOCKWISE, NEXT_MATHWISE, OPPOSITE, Orientation, Tile } from "../models";
-import { TileResources } from "./common";
+import { ElectronAction, FLIP, NEXT_CLOCKWISE, NEXT_MATHWISE, OPPOSITE, Orientation, Tile } from "../models";
+import { TileResources } from "./resources";
 
 export class Wire implements Tile {
   static resources = new TileResources();
@@ -10,7 +10,9 @@ export class Wire implements Tile {
   y = 0;
 
   static async load(): Promise<void> {
-    await Wire.resources.buildRotations(Orientation.EAST, 4, "tile-wire-h");
+    const wire = this.resources.byId("tile-wire-h");
+    const orientations = await this.resources.buildRotations(wire, Orientation.EAST);
+    this.resources.fillOrientations(orientations);
   }
 
   rotate(variant?: number): Tile {
@@ -23,13 +25,13 @@ export class Wire implements Tile {
     return this.orientation;
   }
 
-  action(orientation: Orientation): Action {
+  onElectron(orientation: Orientation): ElectronAction {
     if (this.orientation == Orientation.NORTH) {
       return (orientation == Orientation.NORTH || orientation == Orientation.SOUTH) ?
-        Action.move(orientation) : Action.die;
+        ElectronAction.move(orientation) : ElectronAction.die;
     } else {
       return (orientation == Orientation.EAST || orientation == Orientation.WEST) ?
-        Action.move(orientation) : Action.die;
+        ElectronAction.move(orientation) : ElectronAction.die;
     }
   }
 }
@@ -44,7 +46,9 @@ export class WireOneWay implements Tile {
   y = 0;
 
   static async load(): Promise<void> {
-    await WireOneWay.resources.buildRotations(Orientation.EAST, 4, "tile-wire-oneway");
+    const wire = this.resources.byId("tile-wire-oneway");
+    const orientations = await this.resources.buildRotations(wire, Orientation.EAST);
+    this.resources.fillOrientations(orientations);
   }
 
   rotate(variant?: number): Tile {
@@ -57,9 +61,9 @@ export class WireOneWay implements Tile {
     return this.orientation;
   }
 
-  action(orientation: Orientation): Action {
-    if (this.orientation == orientation) return Action.move(orientation);
-    return Action.die;
+  onElectron(orientation: Orientation): ElectronAction {
+    if (this.orientation == orientation) return ElectronAction.move(orientation);
+    return ElectronAction.die;
   }
 }
 
@@ -74,7 +78,9 @@ export class WireCorner implements Tile {
   y = 0;
 
   static async load(): Promise<void> {
-    await WireCorner.resources.buildRotations(Orientation.SOUTH, 4, "tile-wire-corner");
+    const wire = this.resources.byId("tile-wire-corner");
+    const orientations = await this.resources.buildRotations(wire, Orientation.SOUTH);
+    this.resources.fillOrientations(orientations);
   }
 
   rotate(variant?: number): Tile {
@@ -87,10 +93,10 @@ export class WireCorner implements Tile {
     return this.orientation;
   }
 
-  action(orientation: Orientation): Action {
-    if (orientation == OPPOSITE[this.orientation]) return Action.move(NEXT_MATHWISE[orientation]);
-    if (orientation == NEXT_MATHWISE[this.orientation]) return Action.move(this.orientation);
-    return Action.die;
+  onElectron(orientation: Orientation): ElectronAction {
+    if (orientation == OPPOSITE[this.orientation]) return ElectronAction.move(NEXT_MATHWISE[orientation]);
+    if (orientation == NEXT_MATHWISE[this.orientation]) return ElectronAction.move(this.orientation);
+    return ElectronAction.die;
   }
 }
 
@@ -104,7 +110,8 @@ export class WireCross implements Tile {
   y = 0;
 
   static async load(): Promise<void> {
-    await WireCross.resources.buildRotations(Orientation.EAST, 1, "tile-wire-cross");
+    const wire = this.resources.byId("tile-wire-cross");
+    this.resources.fillOrientations(new Map([ [ Orientation.EAST, wire ] ]));
   }
 
   rotate(variant?: number): Tile {
@@ -115,7 +122,7 @@ export class WireCross implements Tile {
     return 0;
   }
 
-  action(orientation: Orientation): Action {
-    return Action.move(orientation);
+  onElectron(orientation: Orientation): ElectronAction {
+    return ElectronAction.move(orientation);
   }
 }
