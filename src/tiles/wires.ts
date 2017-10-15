@@ -1,6 +1,7 @@
 import { ElectronAction, FLIP, NEXT_CLOCKWISE, NEXT_MATHWISE, OPPOSITE, Orientation, Tile } from "../models";
 import { TileResources } from "./resources";
 
+
 export class Wire implements Tile {
   static resources = new TileResources();
 
@@ -32,6 +33,30 @@ export class Wire implements Tile {
     } else {
       return (orientation == Orientation.EAST || orientation == Orientation.WEST) ?
         ElectronAction.move(orientation) : ElectronAction.die;
+    }
+  }
+
+  hasLink(orientation: Orientation): boolean {
+    switch (orientation) {
+      case Orientation.NORTH:
+      case Orientation.SOUTH:
+        return this.orientation == Orientation.NORTH;
+      case Orientation.EAST:
+      case Orientation.WEST:
+        return this.orientation == Orientation.EAST;
+    }
+  }
+
+  placementHint(orientation: Orientation) {
+    switch (orientation) {
+      case Orientation.NORTH:
+      case Orientation.SOUTH:
+        this.rotate(Orientation.NORTH);
+        break;
+      case Orientation.EAST:
+      case Orientation.WEST:
+        this.rotate(Orientation.EAST);
+        break;
     }
   }
 }

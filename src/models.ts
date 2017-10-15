@@ -131,6 +131,13 @@ export interface Tile {
   // the current HTML element to draw.
   element: HTMLElement;
 
+  // optional: a tile may orient itself in a convenient direction by matching
+  // tiles nearby. `hasLink` should report if a tile would link up with
+  // another tile in a given direction, and `placementHint` will tell a new
+  // tile that there's a linkable tile in that direction.
+  hasLink?: (orientation: Orientation) => boolean;
+  placementHint?: (orientation: Orientation) => void;
+
   // location on the board, if any.
   x: number;
   y: number;

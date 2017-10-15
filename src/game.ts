@@ -239,8 +239,31 @@ export class Board {
     if (y === undefined) y = this.cursorY;
     const oldTile = this.tileGrid.getAt(x, y);
     if (oldTile) this.div.removeChild(oldTile.element);
+
     this.tileGrid.setAt(x, y, tile);
     this.drawTile(x, y);
+
+    // check for nearby tiles, as a placement orientation hint.
+    if (tile && tile.placementHint) {
+      this.div.removeChild(tile.element);
+      const [ north, east, south, west ] = [
+        this.tileGrid.getAt(x, y - 1),
+        this.tileGrid.getAt(x + 1, y),
+        this.tileGrid.getAt(x, y + 1),
+        this.tileGrid.getAt(x - 1, y)
+      ];
+      if (west && west.hasLink && west.hasLink(Orientation.EAST)) {
+        tile.placementHint(Orientation.WEST);
+      } else if (east && east.hasLink && east.hasLink(Orientation.WEST)) {
+        tile.placementHint(Orientation.EAST);
+      } else if (north && north.hasLink && north.hasLink(Orientation.SOUTH)) {
+        tile.placementHint(Orientation.NORTH);
+      } else if (south && south.hasLink && south.hasLink(Orientation.NORTH)) {
+        tile.placementHint(Orientation.SOUTH);
+      }
+      this.drawTile();
+    }
+
     this.save();
   }
 
