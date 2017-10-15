@@ -149,4 +149,7 @@ export interface Tile {
   // location on the board, if any.
   x: number;
   y: number;
+
+  // can two electrons collide on this tile? if so, they'll be eliminated.
+  canCollide?: (a: Orientation, b: Orientation) => boolean;
 }

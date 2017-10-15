@@ -43,6 +43,10 @@ export class Wire implements Tile {
   placementHint(orientation: Orientation) {
     this.rotate(TO_NE[orientation]);
   }
+
+  canCollide(a: Orientation, b: Orientation): boolean {
+    return true;
+  }
 }
 
 
@@ -81,6 +85,10 @@ export class WireOneWay implements Tile {
 
   placementHint(orientation: Orientation) {
     this.rotate(OPPOSITE[orientation]);
+  }
+
+  canCollide(a: Orientation, b: Orientation): boolean {
+    return true;
   }
 }
 
@@ -123,6 +131,10 @@ export class WireCorner implements Tile {
   placementHint(orientation: Orientation) {
     this.rotate(orientation);
   }
+
+  canCollide(a: Orientation, b: Orientation): boolean {
+    return true;
+  }
 }
 
 
@@ -149,5 +161,9 @@ export class WireCross implements Tile {
 
   onElectron(orientation: Orientation): ElectronAction {
     return ElectronAction.move(orientation);
+  }
+
+  canCollide(a: Orientation, b: Orientation): boolean {
+    return a == OPPOSITE[b];
   }
 }

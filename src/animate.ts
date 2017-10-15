@@ -1,3 +1,4 @@
+import { findRuns } from "./common/arrays";
 import { moveToPixel } from "./common/dom";
 import { FRAME_MSEC, nextFrame, once } from "./common/events";
 import { Board } from "./game";
@@ -68,6 +69,20 @@ export class Animation {
   async tick(speed: number): Promise<void> {
     console.log("tick:", Date.now(), this.electrons.map(e => e.toString()).join(", "));
     this.activeTiles = this.activeTiles.filter(tile => tile.activated);
+
+    // eliminate any electrons which have "hit" each other.
+    this.electrons = this.electrons.sort((a, b) => {
+      return (a.y == b.y) ? a.x - b.x : a.y - b.y;
+    });
+    findRuns(this.electrons, (a, b) => {
+      if (a.alive && b.alive && a.x == b.x && a.y == b.y) {
+        const tile = this.board.tileGrid.getAt(a.x, a.y);
+        if (tile && tile.canCollide) return tile.canCollide(a.orientation, b.orientation);
+      }
+      return false;
+    }, run => {
+      run.forEach(e => this.animations.push(this.removeElectron(e, speed)));
+    });
     this.electrons = this.electrons.filter(e => e.alive);
 
     this.activeTiles.forEach(tile => {
