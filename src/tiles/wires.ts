@@ -1,4 +1,6 @@
-import { ElectronAction, FLIP, NEXT_CLOCKWISE, NEXT_MATHWISE, OPPOSITE, Orientation, Tile, TO_NE } from "../models";
+import {
+  Action, ElectronAction, FLIP, NEXT_CLOCKWISE, NEXT_MATHWISE, OPPOSITE, Orientation, Tile, TO_NE
+} from "../models";
 import { TileResources } from "./resources";
 
 
@@ -165,5 +167,68 @@ export class WireCross implements Tile {
 
   canCollide(a: Orientation, b: Orientation): boolean {
     return a == OPPOSITE[b];
+  }
+}
+
+
+export class WireSplit implements Tile {
+  static resources = new TileResources();
+  static flippedResources = new TileResources();
+
+  // west to south+east, unless flipped, then north+east
+  orientation = Orientation.WEST;
+  flipped = false;
+
+  element: HTMLElement = WireSplit.resources.getClone(this.orientation, this);
+  x = 0;
+  y = 0;
+
+  static async load(): Promise<void> {
+    const wse = this.resources.byId("tile-wire-split-wse");
+    const wne = await this.resources.flipY(wse);
+    this.resources.fillOrientations(await this.resources.buildRotations(wse, Orientation.WEST));
+    this.flippedResources.fillOrientations(await this.resources.buildRotations(wne, Orientation.WEST));
+  }
+
+  rotate(variant?: number): Tile {
+    if (variant !== undefined) {
+      if (variant >= 4) {
+        this.flipped = true;
+        this.orientation = variant - 4;
+      } else {
+        this.flipped = false;
+        this.orientation = variant;
+      }
+    } else {
+      if (this.flipped) {
+        this.orientation = NEXT_CLOCKWISE[this.orientation];
+        this.flipped = false;
+      } else {
+        this.flipped = true;
+      }
+    }
+
+    this.element = (this.flipped ? WireSplit.flippedResources : WireSplit.resources).getClone(this.orientation, this);
+    return this;
+  }
+
+  get variant(): number {
+    return this.orientation + (this.flipped ? 4 : 0);
+  }
+
+  onElectron(orientation: Orientation): ElectronAction {
+    const branch = this.flipped ? NEXT_MATHWISE[orientation] : NEXT_CLOCKWISE[orientation]
+    if (orientation == OPPOSITE[this.orientation]) {
+      const action = Action.spawn(branch);
+      return ElectronAction.move(orientation).withAction(action);
+    }
+    if (orientation == branch || orientation == this.orientation) {
+      return ElectronAction.move(this.orientation);
+    }
+    return ElectronAction.die;
+  }
+
+  canCollide(a: Orientation, b: Orientation): boolean {
+    return true;
   }
 }

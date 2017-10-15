@@ -44,6 +44,10 @@ export class TileResources {
     return stackImages(images);
   }
 
+  flipY(image: HTMLImageElement): Promise<HTMLImageElement> {
+    return flipImageY(image);
+  }
+
   async stackRotations(
     orientations: Map<Orientation, HTMLImageElement>,
     images: HTMLImageElement[]
@@ -80,7 +84,7 @@ export class TileResources {
 
 
 // assumes a square image.
-function rotateImage(original: HTMLImageElement, rotation: number): HTMLImageElement {
+async function rotateImage(original: HTMLImageElement, rotation: number): Promise<HTMLImageElement> {
   const canvas = document.createElement("canvas");
 	canvas.width = original.width;
 	canvas.height = original.height;
@@ -94,8 +98,28 @@ function rotateImage(original: HTMLImageElement, rotation: number): HTMLImageEle
   context.restore();
 
   const image = new Image(original.width, original.height);
-  image.src = canvas.toDataURL("image/png");
   image.classList.add("tile");
+  image.src = canvas.toDataURL("image/png");
+  await once(image, "load", () => null);
+  return image;
+}
+
+async function flipImageY(original: HTMLImageElement): Promise<HTMLImageElement> {
+  const canvas = document.createElement("canvas");
+	canvas.width = original.width;
+	canvas.height = original.height;
+	const context = canvas.getContext("2d") as CanvasRenderingContext2D;
+
+  context.save();
+  context.translate(0, original.height);
+  context.scale(1, -1);
+  context.drawImage(original, 0, 0, original.width, original.height);
+  context.restore();
+
+  const image = new Image(original.width, original.height);
+  image.classList.add("tile");
+  image.src = canvas.toDataURL("image/png");
+  await once(image, "load", () => null);
   return image;
 }
 

@@ -91,11 +91,7 @@ export class Animation {
     this.electrons.forEach(e => this.processElectron(e, speed));
     await Promise.all(this.animations);
 
-    this.newElectrons.forEach(e => {
-      this.drawElectron(e);
-      this.electrons.push(e);
-    });
-
+    this.electrons = this.electrons.concat(this.newElectrons);
     this.newElectrons.splice(0, this.newElectrons.length);
     this.animations.splice(0, this.animations.length);
     await nextFrame();
@@ -108,6 +104,8 @@ export class Animation {
       case ActionType.SPAWN:
         const e = new Electron(tile.x, tile.y);
         e.orientation = action.orientation;
+        this.drawElectron(e);
+        this.animations.push(nextFrame().then(() => this.moveElectron(e, e.orientation, speed)));
         this.newElectrons.push(e);
         break;
       case ActionType.CHANGE_IMAGE:
@@ -144,7 +142,7 @@ export class Animation {
     this.electrons.forEach(e => this.drawElectron(e));
   }
 
-  async drawElectron(electron: Electron): Promise<void> {
+  drawElectron(electron: Electron) {
     const [ xPixel, yPixel ] = this.board.tileToPixel(electron.x, electron.y);
     this.board.div.appendChild(electron.draw(xPixel, yPixel));
   }
