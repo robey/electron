@@ -1,11 +1,14 @@
 import { moveToPixel } from "./common/dom";
-import { nextFrame, once } from "./common/events";
+import { FRAME_MSEC, nextFrame, once } from "./common/events";
 import { Board } from "./game";
 import { Electron } from "./electron";
 import { Action, ActionType, ElectronAction, ElectronActionType, Orientation, Tile } from "./models";
 
 // how many ticks will we allow with no electrons in play?
-const MAX_DEAD_TICKS = 10;
+const MAX_DEAD_TICKS = 25;
+
+// any delay less than this, and don't bother trying to animate.
+const MIN_ANIMATE_SPEED = 50;
 
 export class Animation {
   running = false;
@@ -133,7 +136,7 @@ export class Animation {
 
   async removeElectron(electron: Electron, speed: number): Promise<void> {
     electron.alive = false;
-    await electron.vanish(speed);
+    await this.vanish(electron.element, speed);
     this.board.div.removeChild(electron.element);
   }
 
@@ -142,41 +145,61 @@ export class Animation {
     switch (orientation) {
       case Orientation.NORTH:
         electron.y--;
-        if (speed > 50) await electron.pushTo(0, -this.board.tileSize, speed);
+        await this.pushTo(electron.element, 0, -this.board.tileSize, speed);
         break;
       case Orientation.EAST:
         electron.x++;
-        if (speed > 50) await electron.pushTo(this.board.tileSize, 0, speed);
+        await this.pushTo(electron.element, this.board.tileSize, 0, speed);
         break;
       case Orientation.SOUTH:
         electron.y++;
-        if (speed > 50) await electron.pushTo(0, this.board.tileSize, speed);
+        await this.pushTo(electron.element, 0, this.board.tileSize, speed);
         break;
       case Orientation.WEST:
         electron.x--;
-        if (speed > 50) await electron.pushTo(-this.board.tileSize, 0, speed);
+        await this.pushTo(electron.element, -this.board.tileSize, 0, speed);
         break;
     }
     this.drawElectron(electron);
   }
 
+  async pushTo(image: HTMLElement, x: number, y: number, speed: number): Promise<void> {
+    if (speed < MIN_ANIMATE_SPEED) return;
+    image.style.transition = `transform ${speed / 1000}s linear`;
+    image.style.transform = `translate(${x}px, ${y}px)`;
+    await once(image, "transitionend", (event: TransitionEvent) => {
+      image.style.transition = null;
+      image.style.transform = null;
+    });
+  }
+
+  async vanish(image: HTMLElement, speed: number): Promise<void> {
+    if (speed < MIN_ANIMATE_SPEED) return;
+    image.style.transition = `transform ${speed / 1000}s`;
+    image.style.transform = `scale(0)`;
+    await once(image, "transitionend", (event: TransitionEvent) => {
+      image.style.transition = null;
+      image.style.transform = null;
+    });
+  }
+
   async changeImage(tile: Tile, oldImage: HTMLElement, newImage: HTMLElement, speed: number): Promise<void> {
     const [ xPixel, yPixel ] = this.board.tileToPixel(tile.x, tile.y);
-    this.board.div.appendChild(oldImage);
     this.board.div.appendChild(newImage);
     moveToPixel(oldImage, xPixel, yPixel);
     moveToPixel(newImage, xPixel, yPixel);
-    newImage.style.zIndex = "1";
-    newImage.style.opacity = "0";
-    newImage.style.transition = `opacity ${speed / 1000}s ease-in-out`;
-    // animate!
-    await nextFrame();
-    newImage.style.opacity = "1";
-    await once(newImage, "transitionend", (event: TransitionEvent) => {
-      newImage.style.transition = null;
-    });
-    await nextFrame();
+    if (speed >= MIN_ANIMATE_SPEED) {
+      newImage.style.zIndex = "1";
+      newImage.style.opacity = "0";
+      newImage.style.transition = `opacity ${(speed - FRAME_MSEC) / 1000}s ease-in-out`;
+      // animate!
+      await nextFrame();
+      newImage.style.opacity = "1";
+      await once(newImage, "transitionend", (event: TransitionEvent) => {
+        newImage.style.transition = null;
+      });
+      newImage.style.zIndex = "0";
+    }
     this.board.div.removeChild(oldImage);
-    newImage.style.zIndex = "0";
   }
 }

@@ -14,7 +14,7 @@ export function once(element: Element, name: string, f: EventListener): Promise<
   });
 }
 
-const FRAME_MSEC = 1000 / 60;
+export const FRAME_MSEC = 1000 / 60;
 
 // usage: await nextFrame();
 export function nextFrame(): Promise<void> {

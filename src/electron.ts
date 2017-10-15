@@ -42,22 +42,4 @@ export class Electron {
       await nextFrame();
     }
   }
-
-  async pushTo(x: number, y: number, speed: number): Promise<void> {
-    this.element.style.transition = `transform ${speed / 1000}s linear`;
-    this.element.style.transform = `translate(${x}px, ${y}px)`;
-    await once(this.element, "transitionend", (event: TransitionEvent) => {
-      this.element.style.transition = null;
-      this.element.style.transform = null;
-    });
-  }
-
-  async vanish(speed: number): Promise<void> {
-    this.element.style.transition = `transform ${speed / 1000}s`;
-    this.element.style.transform = `scale(0)`;
-    await once(this.element, "transitionend", (event: TransitionEvent) => {
-      this.element.style.transition = null;
-      this.element.style.transform = null;
-    });
-  }
 }
