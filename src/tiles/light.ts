@@ -2,7 +2,7 @@ import { range } from "../common/arrays";
 import { Action, ElectronAction, NEXT_CLOCKWISE, Orientation, Tile } from "../models";
 import { TileResources } from "./resources";
 
-const DEFAULT_POWER = 5;
+const DEFAULT_POWER = 20;
 
 export class Light implements Tile {
   static resources = new TileResources();
