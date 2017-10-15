@@ -109,6 +109,14 @@ export const FLIP = {
   [Orientation.EAST]: Orientation.NORTH,
 };
 
+// orient to either north or east:
+export const TO_NE = {
+  [Orientation.EAST]: Orientation.EAST,
+  [Orientation.NORTH]: Orientation.NORTH,
+  [Orientation.WEST]: Orientation.EAST,
+  [Orientation.SOUTH]: Orientation.NORTH,
+};
+
 export interface Tile {
   // change to the next orientation, either by user request, or to a specific
   // variant because we're loading from storage.

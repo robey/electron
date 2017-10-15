@@ -40,4 +40,12 @@ export class PowerOnce implements Tile {
   reset() {
     this.activated = true;
   }
+
+  hasLink(orientation: Orientation): boolean {
+    return orientation == this.orientation;
+  }
+
+  placementHint(orientation: Orientation) {
+    this.rotate(orientation);
+  }
 }

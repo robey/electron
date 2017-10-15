@@ -1,4 +1,4 @@
-import { ElectronAction, FLIP, NEXT_CLOCKWISE, NEXT_MATHWISE, OPPOSITE, Orientation, Tile } from "../models";
+import { ElectronAction, FLIP, NEXT_CLOCKWISE, NEXT_MATHWISE, OPPOSITE, Orientation, Tile, TO_NE } from "../models";
 import { TileResources } from "./resources";
 
 
@@ -37,27 +37,11 @@ export class Wire implements Tile {
   }
 
   hasLink(orientation: Orientation): boolean {
-    switch (orientation) {
-      case Orientation.NORTH:
-      case Orientation.SOUTH:
-        return this.orientation == Orientation.NORTH;
-      case Orientation.EAST:
-      case Orientation.WEST:
-        return this.orientation == Orientation.EAST;
-    }
+    return this.orientation == TO_NE[orientation];
   }
 
   placementHint(orientation: Orientation) {
-    switch (orientation) {
-      case Orientation.NORTH:
-      case Orientation.SOUTH:
-        this.rotate(Orientation.NORTH);
-        break;
-      case Orientation.EAST:
-      case Orientation.WEST:
-        this.rotate(Orientation.EAST);
-        break;
-    }
+    this.rotate(TO_NE[orientation]);
   }
 }
 
@@ -89,6 +73,14 @@ export class WireOneWay implements Tile {
   onElectron(orientation: Orientation): ElectronAction {
     if (this.orientation == orientation) return ElectronAction.move(orientation);
     return ElectronAction.die;
+  }
+
+  hasLink(orientation: Orientation): boolean {
+    return this.orientation == TO_NE[orientation];
+  }
+
+  placementHint(orientation: Orientation) {
+    this.rotate(OPPOSITE[orientation]);
   }
 }
 
@@ -122,6 +114,14 @@ export class WireCorner implements Tile {
     if (orientation == OPPOSITE[this.orientation]) return ElectronAction.move(NEXT_MATHWISE[orientation]);
     if (orientation == NEXT_MATHWISE[this.orientation]) return ElectronAction.move(this.orientation);
     return ElectronAction.die;
+  }
+
+  hasLink(orientation: Orientation): boolean {
+    return orientation == this.orientation || orientation == NEXT_CLOCKWISE[this.orientation];
+  }
+
+  placementHint(orientation: Orientation) {
+    this.rotate(orientation);
   }
 }
 
