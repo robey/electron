@@ -5,8 +5,9 @@ export { setTileDragEvents, TileResources };
 
 import { Light } from "./tiles/light";
 import { PowerOnce } from "./tiles/power";
+import { Switch } from "./tiles/switch";
 import { Wire, WireCorner, WireCross, WireOneWay, WireSplit } from "./tiles/wires";
-export { Light, PowerOnce, Wire, WireCorner, WireCross, WireOneWay, WireSplit };
+export { Light, PowerOnce, Switch, Wire, WireCorner, WireCross, WireOneWay, WireSplit };
 
 interface TileClass {
   load(): Promise<void>;
@@ -25,7 +26,8 @@ export const TILES: TileInfo[] = [
   { id: 4, type: WireOneWay },
   { id: 5, type: PowerOnce },
   { id: 6, type: Light },
-  { id: 7, type: WireSplit }
+  { id: 7, type: WireSplit },
+  { id: 8, type: Switch },
 ];
 
 /*
