@@ -17,9 +17,9 @@ export class Light implements Tile {
     const cross = this.resources.byId("tile-wire-cross");
     const lightOn = this.resources.byId("tile-light-on");
     const lightOff = this.resources.byId("tile-light-off");
-    this.resources.images[0] = await this.resources.stack([ cross, lightOff ]);
+    this.resources.addImage(0, this.resources.stack(Promise.all([ cross, lightOff ])));
     await Promise.all(range(1, DEFAULT_POWER + 1).map(async i => {
-      this.resources.images[i] = await this.resources.stack([ cross, lightOn ]);
+      this.resources.addImage(i, this.resources.stack(Promise.all([ cross, lightOn ])));
     }));
   }
 

@@ -14,10 +14,10 @@ export class Switch implements Tile {
     const switchOff = this.resources.byId("tile-switch-off");
     const switchOn = this.resources.byId("tile-switch-on");
 
-    this.resources.images = {
-      0: await this.resources.stack([ cross, switchOff ]),
-      1: await this.resources.stack([ cross, switchOn ]),
-    };
+    await Promise.all([
+      this.resources.addImage(0, this.resources.stack(Promise.all([ cross, switchOff ]))),
+      this.resources.addImage(1, this.resources.stack(Promise.all([ cross, switchOn ]))),
+    ]);
   }
 
   rotate(variant?: number): Tile {

@@ -13,9 +13,9 @@ export class PowerOnce implements Tile {
 
   static async load(): Promise<void> {
     const stub = this.resources.byId("tile-wire-stub-north");
-    const orientations = await this.resources.buildRotations(stub, Orientation.NORTH);
-    const stack = await this.resources.stackRotations(orientations, this.resources.byIds("tile-power"));
-    this.resources.fillOrientations(stack);
+    const orientations = this.resources.buildRotations(stub, Orientation.NORTH);
+    const stack = this.resources.stackRotations(orientations, this.resources.byIds("tile-power"));
+    return this.resources.fillOrientations(stack);
   }
 
   rotate(variant?: number): Tile {

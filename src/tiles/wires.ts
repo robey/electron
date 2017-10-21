@@ -14,8 +14,8 @@ export class Wire implements Tile {
 
   static async load(): Promise<void> {
     const wire = this.resources.byId("tile-wire-h");
-    const orientations = await this.resources.buildRotations(wire, Orientation.EAST);
-    this.resources.fillOrientations(orientations);
+    const orientations = this.resources.buildRotations(wire, Orientation.EAST);
+    return this.resources.fillOrientations(orientations);
   }
 
   rotate(variant?: number): Tile {
@@ -62,8 +62,8 @@ export class WireOneWay implements Tile {
 
   static async load(): Promise<void> {
     const wire = this.resources.byId("tile-wire-oneway");
-    const orientations = await this.resources.buildRotations(wire, Orientation.EAST);
-    this.resources.fillOrientations(orientations);
+    const orientations = this.resources.buildRotations(wire, Orientation.EAST);
+    return this.resources.fillOrientations(orientations);
   }
 
   rotate(variant?: number): Tile {
@@ -106,8 +106,8 @@ export class WireCorner implements Tile {
 
   static async load(): Promise<void> {
     const wire = this.resources.byId("tile-wire-corner");
-    const orientations = await this.resources.buildRotations(wire, Orientation.SOUTH);
-    this.resources.fillOrientations(orientations);
+    const orientations = this.resources.buildRotations(wire, Orientation.SOUTH);
+    return this.resources.fillOrientations(orientations);
   }
 
   rotate(variant?: number): Tile {
@@ -150,7 +150,7 @@ export class WireCross implements Tile {
 
   static async load(): Promise<void> {
     const wire = this.resources.byId("tile-wire-cross");
-    this.resources.fillOrientations(new Map([ [ Orientation.EAST, wire ] ]));
+    return this.resources.addImage(Orientation.EAST, wire);
   }
 
   rotate(variant?: number): Tile {
@@ -185,9 +185,11 @@ export class WireSplit implements Tile {
 
   static async load(): Promise<void> {
     const wse = this.resources.byId("tile-wire-split-wse");
-    const wne = await this.resources.flipY(wse);
-    this.resources.fillOrientations(await this.resources.buildRotations(wse, Orientation.WEST));
-    this.flippedResources.fillOrientations(await this.resources.buildRotations(wne, Orientation.WEST));
+    const wne = this.resources.flipY(wse);
+    await Promise.all([
+      this.resources.fillOrientations(this.resources.buildRotations(wse, Orientation.WEST)),
+      this.flippedResources.fillOrientations(this.resources.buildRotations(wne, Orientation.WEST))
+    ]);
   }
 
   rotate(variant?: number): Tile {
