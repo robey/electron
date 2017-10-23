@@ -3,9 +3,9 @@ import { TileResources } from "./resources";
 
 const GATE_DELAY = 2;
 
-export class GateOr implements Tile {
-  static resources = new TileResources();
-  static flippedResources = new TileResources();
+export abstract class Gate implements Tile {
+  abstract name: string;
+  abstract truthTable: boolean[];
 
   // west + south to east, unless flipped, then west + north
   orientation = Orientation.EAST;
@@ -20,24 +20,28 @@ export class GateOr implements Tile {
   primary = false;
   secondary = false;
 
-  static async load(): Promise<void> {
-    const wse = this.resources.byId("tile-wire-t");
-    const wne = this.resources.flipY(wse);
-    const homeplate = this.resources.byId("tile-homeplate");
-    const gate = this.resources.byId("tile-gate-or");
+  static async delegatedLoad(
+    tilename: string,
+    resources: TileResources,
+    flippedResources: TileResources
+  ): Promise<void> {
+    const wse = resources.byId("tile-wire-t");
+    const wne = resources.flipY(wse);
+    const homeplate = resources.byId("tile-homeplate");
+    const gate = resources.byId(tilename);
 
     await Promise.all([
-      this.resources.fillOrientations(
-        this.resources.buildRotations(this.resources.stack([ wse, homeplate, gate ]), Orientation.EAST)
+      resources.fillOrientations(
+        resources.buildRotations(resources.stack([ wse, homeplate, gate ]), Orientation.EAST)
       ),
-      this.flippedResources.fillOrientations(
-        this.resources.buildRotations(this.resources.stack([ wne, homeplate, gate ]), Orientation.EAST)
+      flippedResources.fillOrientations(
+        resources.buildRotations(resources.stack([ wne, homeplate, gate ]), Orientation.EAST)
       ),
     ]);
   }
 
   toString() {
-    return `gate(activated=${this.activated}, cycles=${this.cycles}, status=${this.primary},${this.secondary})`;
+    return `${this.name}(activated=${this.activated}, cycles=${this.cycles}, status=${this.primary},${this.secondary})`;
   }
 
   rotate(variant?: number): Tile {
@@ -81,6 +85,7 @@ export class GateOr implements Tile {
       this.secondary = true;
       return this.cycles < GATE_DELAY - 1 ? ElectronAction.absorb : ElectronAction.die;
     }
+
     // oh, the electron came from some random direction.
     if (this.cycles == 0) this.activated = false;
     return ElectronAction.die;
@@ -90,7 +95,8 @@ export class GateOr implements Tile {
     this.cycles++;
     if (this.cycles < GATE_DELAY) return Action.idle;
     this.activated = false;
-    return (this.primary || this.secondary) ? Action.spawn(this.orientation) : Action.idle;
+    const out = this.truthTable[(this.primary ? 2 : 0) + (this.secondary ? 1 : 0)];
+    return out ? Action.spawn(this.orientation) : Action.idle;
   }
 
   hasLink(orientation: Orientation): boolean {
@@ -100,5 +106,18 @@ export class GateOr implements Tile {
   placementHint(orientation: Orientation) {
     // don't lose flippedness.
     this.rotate(OPPOSITE[orientation] + (this.flipped ? 4 : 0));
+  }
+}
+
+export class GateOr extends Gate implements Tile {
+  name = "OR";
+
+  truthTable = [ false, true, true, true ];
+
+  static resources = new TileResources();
+  static flippedResources = new TileResources();
+
+  static async load(): Promise<void> {
+    return Gate.delegatedLoad("tile-gate-or", GateOr.resources, GateOr.flippedResources);
   }
 }
