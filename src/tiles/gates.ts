@@ -6,6 +6,8 @@ const GATE_DELAY = 2;
 export abstract class Gate implements Tile {
   abstract name: string;
   abstract truthTable: boolean[];
+  abstract resources: TileResources;
+  abstract flippedResources: TileResources;
 
   // west + south to east, unless flipped, then west + north
   orientation = Orientation.EAST;
@@ -62,7 +64,7 @@ export abstract class Gate implements Tile {
       }
     }
 
-    this.element = (this.flipped ? GateOr.flippedResources : GateOr.resources).getClone(this.orientation, this);
+    this.element = (this.flipped ? this.flippedResources : this.resources).getClone(this.orientation, this);
     return this;
   }
 
@@ -116,8 +118,40 @@ export class GateOr extends Gate implements Tile {
 
   static resources = new TileResources();
   static flippedResources = new TileResources();
+  resources = GateOr.resources;
+  flippedResources = GateOr.flippedResources;
 
   static async load(): Promise<void> {
     return Gate.delegatedLoad("tile-gate-or", GateOr.resources, GateOr.flippedResources);
+  }
+}
+
+export class GateAnd extends Gate implements Tile {
+  name = "AND";
+
+  truthTable = [ false, false, false, true ];
+
+  static resources = new TileResources();
+  static flippedResources = new TileResources();
+  resources = GateAnd.resources;
+  flippedResources = GateAnd.flippedResources;
+
+  static async load(): Promise<void> {
+    return Gate.delegatedLoad("tile-gate-and", GateAnd.resources, GateAnd.flippedResources);
+  }
+}
+
+export class GateXor extends Gate implements Tile {
+  name = "XOR";
+
+  truthTable = [ false, true, true, false ];
+
+  static resources = new TileResources();
+  static flippedResources = new TileResources();
+  resources = GateXor.resources;
+  flippedResources = GateXor.flippedResources;
+
+  static async load(): Promise<void> {
+    return Gate.delegatedLoad("tile-gate-xor", GateXor.resources, GateXor.flippedResources);
   }
 }

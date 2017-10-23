@@ -3,12 +3,12 @@ import { Tile } from "./models";
 import { setTileDragEvents, TileResources } from "./tiles/resources";
 export { setTileDragEvents, TileResources };
 
-import { GateOr } from "./tiles/gates";
+import { GateAnd, GateOr, GateXor } from "./tiles/gates";
 import { Light } from "./tiles/light";
 import { PowerOnce } from "./tiles/power";
 import { Switch } from "./tiles/switch";
 import { Wire, WireCorner, WireCross, WireOneWay, WireSplit } from "./tiles/wires";
-export { GateOr, Light, PowerOnce, Switch, Wire, WireCorner, WireCross, WireOneWay, WireSplit };
+export { GateAnd, GateOr, GateXor, Light, PowerOnce, Switch, Wire, WireCorner, WireCross, WireOneWay, WireSplit };
 
 interface TileClass {
   load(): Promise<void>;
@@ -30,6 +30,8 @@ export const TILES: TileInfo[] = [
   { id: 7, type: WireSplit },
   { id: 8, type: Switch },
   { id: 9, type: GateOr },
+  { id: 10, type: GateAnd },
+  { id: 11, type: GateXor },
 ];
 
 /*
