@@ -15,8 +15,8 @@ export class Switch implements Tile {
     const switchOn = this.resources.byId("tile-switch-on");
 
     await Promise.all([
-      this.resources.addImage(0, this.resources.stack(Promise.all([ cross, switchOff ]))),
-      this.resources.addImage(1, this.resources.stack(Promise.all([ cross, switchOn ]))),
+      this.resources.addImage(0, this.resources.stack([ cross, switchOff ])),
+      this.resources.addImage(1, this.resources.stack([ cross, switchOn ])),
     ]);
   }
 

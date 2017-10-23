@@ -17,9 +17,9 @@ export class Light implements Tile {
     const cross = this.resources.byId("tile-wire-cross");
     const lightOn = this.resources.byId("tile-light-on");
     const lightOff = this.resources.byId("tile-light-off");
-    this.resources.addImage(0, this.resources.stack(Promise.all([ cross, lightOff ])));
+    this.resources.addImage(0, this.resources.stack([ cross, lightOff ]));
     await Promise.all(range(1, DEFAULT_POWER + 1).map(async i => {
-      this.resources.addImage(i, this.resources.stack(Promise.all([ cross, lightOn ])));
+      this.resources.addImage(i, this.resources.stack([ cross, lightOn ]));
     }));
   }
 
@@ -53,5 +53,9 @@ export class Light implements Tile {
     const oldImage = this.element;
     this.element = Light.resources.getClone(this.power, this);
     return Action.changeImage(oldImage, this.element);
+  }
+
+  hasLink(orientation: Orientation): boolean {
+    return true;
   }
 }

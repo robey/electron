@@ -233,4 +233,12 @@ export class WireSplit implements Tile {
   canCollide(a: Orientation, b: Orientation): boolean {
     return true;
   }
+
+  hasLink(orientation: Orientation): boolean {
+    return orientation != (this.flipped ? NEXT_MATHWISE[this.orientation] : NEXT_CLOCKWISE[this.orientation]);
+  }
+
+  placementHint(orientation: Orientation) {
+    this.rotate(orientation);
+  }
 }

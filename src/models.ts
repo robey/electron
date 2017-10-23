@@ -5,6 +5,7 @@ export enum Orientation {
 export enum ElectronActionType {
   DIE,
   MOVE,
+  ABSORB,
 }
 
 export class ElectronAction {
@@ -22,6 +23,8 @@ export class ElectronAction {
   static move(orientation: Orientation) {
     return new ElectronAction(ElectronActionType.MOVE, orientation);
   }
+
+  static absorb = new ElectronAction(ElectronActionType.ABSORB);
 
   withAction(action: Action): ElectronAction {
     const rv = new ElectronAction(this.type, this.orientation);

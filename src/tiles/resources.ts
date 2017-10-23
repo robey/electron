@@ -37,12 +37,12 @@ export class TileResources {
     return Promise.resolve(document.getElementById(id) as HTMLImageElement);
   }
 
-  byIds(...ids: string[]): Promise<HTMLImageElement[]> {
-    return Promise.all(ids.map(id => this.byId(id)));
+  byIds(...ids: string[]): Promise<HTMLImageElement>[] {
+    return ids.map(id => this.byId(id));
   }
 
-  stack(images: Promise<HTMLImageElement[]>): Promise<HTMLImageElement> {
-    return images.then(x => stackImages(x));
+  stack(images: Promise<HTMLImageElement>[]): Promise<HTMLImageElement> {
+    return Promise.all(images).then(x => stackImages(x));
   }
 
   flipY(image: Promise<HTMLImageElement>): Promise<HTMLImageElement> {
@@ -53,43 +53,37 @@ export class TileResources {
    * given a map of image rotations, draw each one over a stack of other
    * images, returning a new map.
    */
-  async stackRotations(
-    orientations: Promise<Map<Orientation, HTMLImageElement>>,
-    images: Promise<HTMLImageElement[]>
-  ): Promise<Map<Orientation, HTMLImageElement>> {
-    const oldMap = await orientations;
-    const stack = await images;
-    return new Map(await Promise.all([...oldMap.entries()].map(async ([ key, originalImage ]) => {
-      return [ key, await stackImages([ originalImage ].concat(stack)) ] as [ Orientation, HTMLImageElement ];
-    })));
+  stackRotations(
+    orientations: Map<Orientation, Promise<HTMLImageElement>>,
+    images: Promise<HTMLImageElement>[]
+  ): Map<Orientation, Promise<HTMLImageElement>> {
+    return new Map([...orientations.entries()].map(([ orientation, image ]) => {
+      return [
+        orientation,
+        Promise.all([ image ].concat(images)).then(stack => stackImages(stack))
+      ] as [ Orientation, Promise<HTMLImageElement> ];
+    }));
   }
 
   /*
    * given one image, and its initial orientation, generate a map of all four
    * possible rotations.
    */
-  async buildRotations(
-    originalImage: Promise<HTMLImageElement>,
-    originalOrientation: Orientation
-  ): Promise<Map<Orientation, HTMLImageElement>> {
-    const rv = new Map<Orientation, HTMLImageElement>();
-    const original = await originalImage;
-    const images = await Promise.all([
-      rotateImage(original, 0),
-      rotateImage(original, -Math.PI / 2),
-      rotateImage(original, Math.PI),
-      rotateImage(original, Math.PI / 2),
+  buildRotations(
+    image: Promise<HTMLImageElement>,
+    orientation: Orientation
+  ): Map<Orientation, Promise<HTMLImageElement>> {
+    return new Map([
+      [ orientation, image.then(original => rotateImage(original, 0)) ],
+      [ NEXT_CLOCKWISE[orientation], image.then(original => rotateImage(original, -Math.PI / 2)) ],
+      [ OPPOSITE[orientation], image.then(original => rotateImage(original, Math.PI)) ],
+      [ NEXT_MATHWISE[orientation], image.then(original => rotateImage(original, Math.PI / 2)) ],
     ]);
-    rv.set(originalOrientation, images[0]);
-    rv.set(NEXT_CLOCKWISE[originalOrientation], images[1]);
-    rv.set(OPPOSITE[originalOrientation], images[2]);
-    rv.set(NEXT_MATHWISE[originalOrientation], images[3]);
-    return rv;
   }
 
-  async fillOrientations(orientations: Promise<Map<Orientation, HTMLImageElement>>): Promise<void> {
-    for (const [ key, image ] of (await orientations)) {
-      this.images[key] = image;
+  async fillOrientations(orientations: Map<Orientation, Promise<HTMLImageElement>>): Promise<void> {
+    for (const [ key, image ] of orientations) {
+      this.images[key] = await image;
     }
   }
 
