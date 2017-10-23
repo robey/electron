@@ -127,10 +127,13 @@ export class Animation {
       case ElectronActionType.MOVE:
         this.animations.push(this.moveElectron(electron, electronAction.orientation, speed));
         break;
+      case ElectronActionType.ABSORB:
+        this.animations.push(this.halfsize(electron.element, speed));
+        break;
     }
 
-    if (electronAction.action && tile) {
-      this.processAction(tile, electronAction.action, speed);
+    if (tile) {
+      if (electronAction.action) this.processAction(tile, electronAction.action, speed);
       if (tile.activated) {
         this.activeTiles = this.activeTiles.filter(t => t !== tile);
         this.activeTiles.push(tile);
@@ -190,6 +193,16 @@ export class Animation {
     if (speed < MIN_ANIMATE_SPEED) return;
     image.style.transition = `transform ${speed / 1000}s`;
     image.style.transform = `scale(0)`;
+    await once(image, "transitionend", (event: TransitionEvent) => {
+      image.style.transition = null;
+      image.style.transform = null;
+    });
+  }
+
+  async halfsize(image: HTMLElement, speed: number): Promise<void> {
+    if (speed < MIN_ANIMATE_SPEED) return;
+    image.style.transition = `transform ${speed / 1000}s`;
+    image.style.transform = `scale(0.5)`;
     await once(image, "transitionend", (event: TransitionEvent) => {
       image.style.transition = null;
       image.style.transform = null;
